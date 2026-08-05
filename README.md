@@ -64,6 +64,39 @@ npm run dev
 Если backend недоступен, фронтенд сам переключается на
 `frontend/public/fallback/bootstrap.json` — офлайн-режим для демо без сети.
 
+## Деплой
+
+### Backend — Render
+
+Через Blueprint: New → Blueprint → указать этот репозиторий, Render сам
+прочитает `render.yaml` из корня. Вручную — те же настройки:
+
+| Параметр | Значение |
+|---|---|
+| Root Directory | `backend` |
+| Runtime | Python 3 |
+| Build Command | `pip install -r requirements.txt` |
+| Start Command | `uvicorn app.main:app --host 0.0.0.0 --port $PORT` |
+
+Free-тариф Render использует эфемерную файловую систему — `backend/storage/reports.db`
+(гражданские заявки) не переживёт передеплой. Для демо это не критично;
+для продакшна нужен постоянный диск или внешняя БД.
+
+После деплоя backend будет на `https://<app-name>.onrender.com`. Swagger — `/docs`.
+
+### Frontend — Vercel
+
+Framework Preset определяется автоматически (Vite). Единственное, что нужно
+задать вручную — переменную окружения:
+
+| Переменная | Значение |
+|---|---|
+| `VITE_API_BASE` | `https://<app-name>.onrender.com/api/v1` |
+
+Без этой переменной фронтенд не упадёт — он сам переключится на
+`public/fallback/bootstrap.json` (см. `src/api/client.js`), просто данные
+будут не самые свежие. Root Directory в Vercel — `frontend`.
+
 ## API
 
 Base URL: `/api/v1`. Полная спецификация — [`docs/05_API.md`](docs/05_API.md).
