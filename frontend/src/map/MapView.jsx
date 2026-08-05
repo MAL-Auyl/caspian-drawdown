@@ -36,15 +36,20 @@ export default function MapView() {
       center: [43.65, 51.2],
       zoom: 10,
       minZoom: 7,
-      maxZoom: 14,
+      maxZoom: 19,
     });
-    L.tileLayer("/tiles/{z}/{x}/{y}.png", {
-      maxZoom: 14,
-      maxNativeZoom: 11, // тайлы скачаны только до 11 зума — дальше Leaflet
-      // растягивает имеющиеся, вместо того чтобы запрашивать несуществующие
-      errorTileUrl: "",
-      attribution: "Caspian Pulse — локальные тайлы",
-    }).addTo(map);
+    // Живой спутниковый слой (Esri World Imagery) — полный диапазон зумов и
+    // реальное качество, вместо ограниченного набора локальных тайлов.
+    // Офлайн-режим при этом теряется — сознательный компромисс ради качества
+    // на реальном вебе; локальные тайлы (frontend/public/tiles) остаются
+    // в репозитории на случай возврата к офлайн-варианту.
+    L.tileLayer(
+      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+      {
+        maxZoom: 19,
+        attribution: "Tiles &copy; Esri — Source: Esri, Maxar, Earthstar Geographics",
+      }
+    ).addTo(map);
     mapRef.current = map;
     return () => {
       map.remove();
