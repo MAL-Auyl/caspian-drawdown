@@ -111,8 +111,13 @@ def run(years: list[int], out_dir: Path, project: str, reference_year: int):
 
         crossing_points_wgs84 = []
         for i, t in enumerate(transects):
+            # find_crossing даёт расстояние от суши (начало трансекты) до воды —
+            # это растёт, когда море отступает. Конвенция всего проекта обратная
+            # (отрицательная скорость = отступление, как "расстояние от опорной
+            # точки в море до берега", а не наоборот) — храним со знаком минус,
+            # чтобы регрессия и total_retreat_m считались уже в общей конвенции.
             pos = find_crossing(samples.get(i, []), threshold)
-            positions_by_transect[i][year] = pos
+            positions_by_transect[i][year] = -pos if pos is not None else None
             if pos is not None:
                 pt = t.interpolate(pos)
                 crossing_points_wgs84.append(list(transform(_TO_OUTPUT, pt).coords)[0])
@@ -190,6 +195,7 @@ def _build_objects(transect_features, years):
         if d_last is None:
             valid = [y for y in years if positions.get(str(y)) is not None]
             d_last = positions.get(str(valid[-1])) if valid else 0.0
+        d_last = abs(d_last)  # positions хранятся в общей конвенции (со знаком), расстояние — всегда положительное
 
         risk = compute_risk(speed, d_last, od["category"])
         forecast = build_scenarios(d_last, speed, last_year)
