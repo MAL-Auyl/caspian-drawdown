@@ -176,6 +176,17 @@ def run(years: list[int], out_dir: Path, project: str, reference_year: int):
     print(f"objects.geojson: {len(objects_features)} объектов (координаты приблизительные, см. README.md)")
 
 
+def _nearest_distance(positions: dict, target_year: int, years: list[int]) -> float:
+    """abs(position) на нужный год, либо на ближайший доступный, если данных
+    за сам год нет (снимок не найден/облачно)."""
+    v = positions.get(str(target_year))
+    if v is not None:
+        return abs(v)
+    candidates = sorted((y for y in years if positions.get(str(y)) is not None),
+                         key=lambda y: abs(y - target_year))
+    return abs(positions[str(candidates[0])]) if candidates else 0.0
+
+
 def _build_objects(transect_features, years):
     import math
     features = []
@@ -191,14 +202,15 @@ def _build_objects(transect_features, years):
         speed = best["properties"]["speed_m_per_year"]
         positions = best["properties"]["positions"]
         last_year = years[-1]
-        d_last = positions.get(str(last_year))
-        if d_last is None:
-            valid = [y for y in years if positions.get(str(y)) is not None]
-            d_last = positions.get(str(valid[-1])) if valid else 0.0
-        d_last = abs(d_last)  # positions хранятся в общей конвенции (со знаком), расстояние — всегда положительное
 
-        risk = compute_risk(speed, d_last, od["category"])
-        forecast = build_scenarios(d_last, speed, last_year)
+        d2000 = _nearest_distance(positions, 2000, years)
+        d2010 = _nearest_distance(positions, 2010, years)
+        d2020 = _nearest_distance(positions, 2020, years)
+        d2026 = _nearest_distance(positions, 2026, years)
+        d_last = _nearest_distance(positions, last_year, years)
+
+        risk = compute_risk(speed, d2026, od["category"])
+        forecast = build_scenarios(d2026, speed, last_year)
         features.append({
             "type": "Feature",
             "geometry": {"type": "Point", "coordinates": [od["lon"], od["lat"]]},
@@ -207,7 +219,10 @@ def _build_objects(transect_features, years):
                 "name_ru": od["name_ru"], "name_kk": od["name_kk"], "name_en": od["name_en"],
                 "category": od["category"], "criticality": risk["criticality"],
                 "nearest_transect_id": best["properties"]["transect_id"],
-                "distance_to_shore_m": d_last,
+                "distance_to_shore_2000_m": round(d2000, 1),
+                "distance_to_shore_2010_m": round(d2010, 1),
+                "distance_to_shore_2020_m": round(d2020, 1),
+                "distance_to_shore_2026_m": round(d2026, 1),
                 "speed_m_per_year": speed,
                 "risk_score": risk["score"], "risk_level": risk["level"],
                 "risk_components": risk["components"],
