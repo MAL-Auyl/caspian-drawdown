@@ -16,11 +16,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import numpy as np
-from scipy import stats
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from pipeline.gee import config as cfg
+from pipeline.common.stats import confidence_of, regression_for, risk_class_of
+from pipeline.risk.engine import compute_risk
+from pipeline.forecast.scenarios import build_scenarios
 
 RNG = np.random.default_rng(42)
 
@@ -145,42 +147,6 @@ def synth_speed(i: int, n: int) -> float:
     return float(np.clip(base, -58.0, 4.5))
 
 
-def regression_for(years: list[int], positions: dict[int, float]):
-    xs = [y for y in years if positions[y] is not None]
-    ys = [positions[y] for y in years if positions[y] is not None]
-    res = stats.linregress(xs, ys)
-    n = len(xs)
-    dof = max(n - 2, 1)
-    tval = float(stats.t.ppf(0.975, dof))
-    ci_half = tval * res.stderr
-    return {
-        "model": "linear",
-        "slope_m_per_year": round(float(res.slope), 2),
-        "intercept": round(float(res.intercept), 1),
-        "r_squared": round(float(res.rvalue ** 2), 3),
-        "std_error": round(float(res.stderr), 2),
-        "ci_95_low": round(float(res.slope - ci_half), 2),
-        "ci_95_high": round(float(res.slope + ci_half), 2),
-        "n": n,
-    }
-
-
-def confidence_of(r_squared: float, valid_years: int) -> str:
-    if r_squared >= 0.8 and valid_years >= 20:
-        return "high"
-    if r_squared >= 0.5 and valid_years >= 15:
-        return "medium"
-    return "low"
-
-
-def risk_class_of(speed: float) -> str:
-    if speed <= -20:
-        return "high"
-    if speed <= -8:
-        return "medium"
-    return "low"
-
-
 def build_transect_features(transects, years):
     features = []
     for j, tr in enumerate(transects):
@@ -235,16 +201,11 @@ def nearest_transect(lon, lat, transect_features):
     return best, approx_m
 
 
-def normalize(value, lo, hi):
-    return float(np.clip((value - lo) / (hi - lo) * 100, 0, 100))
-
-
 def build_objects(transect_features, years):
     features = []
     for od in OBJECT_DEFS:
         tf, dist_m = nearest_transect(od["lon"], od["lat"], transect_features)
         speed = tf["properties"]["speed_m_per_year"]
-        crit_base = cfg.CATEGORY_CRITICALITY[od["category"]]["base"]
 
         d2000 = float(RNG.uniform(120, 500))
         years_span = years[-1] - years[0]
@@ -252,35 +213,8 @@ def build_objects(transect_features, years):
         d2010 = round(d2000 + (d2026 - d2000) * (2010 - years[0]) / years_span, 1)
         d2020 = round(d2000 + (d2026 - d2000) * (2020 - years[0]) / years_span, 1)
 
-        crit_dist = cfg.CRITICAL_DISTANCE_M.get(od["category"], 300)
-        years_to_threshold = max((crit_dist - d2026) / abs(speed), 0) if speed < 0 else 99.0
-
-        norm_speed = normalize(abs(speed), 0, 50)
-        norm_dist = normalize(d2026, 0, 1000)
-        norm_crit = normalize(crit_base, 0, 10)
-        norm_ttt = normalize(30 - min(years_to_threshold, 30), 0, 30)
-
-        w = cfg.RISK_WEIGHTS
-        score = (norm_speed * w["retreat_speed"] + norm_dist * w["current_distance"]
-                 + norm_crit * w["criticality"] + norm_ttt * w["years_to_threshold"])
-        score = round(score)
-        level = "high" if score >= 67 else "medium" if score >= 34 else "low"
-
-        def scenario(mult, poly=False):
-            out = {}
-            for h in (2030, 2035, 2040):
-                dy = h - years[-1]
-                delta = speed * dy * mult
-                if poly:
-                    delta *= 1 + 0.015 * dy
-                out[str(h)] = round(max(d2026 - delta, 0), 0)
-            return out
-
-        forecast = {
-            "optimistic": scenario(0.75),
-            "baseline": scenario(1.0),
-            "pessimistic": scenario(1.25, poly=True),
-        }
+        risk = compute_risk(speed, d2026, od["category"])
+        forecast = build_scenarios(d2026, speed, years[-1])
 
         features.append({
             "type": "Feature",
@@ -288,21 +222,16 @@ def build_objects(transect_features, years):
             "properties": {
                 "object_id": od["object_id"],
                 "name_ru": od["name_ru"], "name_kk": od["name_kk"], "name_en": od["name_en"],
-                "category": od["category"], "criticality": crit_base,
+                "category": od["category"], "criticality": risk["criticality"],
                 "nearest_transect_id": tf["properties"]["transect_id"],
                 "distance_to_shore_2000_m": round(d2000, 1),
                 "distance_to_shore_2010_m": d2010,
                 "distance_to_shore_2020_m": d2020,
                 "distance_to_shore_2026_m": d2026,
                 "speed_m_per_year": speed,
-                "risk_score": score,
-                "risk_level": level,
-                "risk_components": {
-                    "speed": {"raw": speed, "normalized": round(norm_speed), "weight": w["retreat_speed"]},
-                    "distance": {"raw": d2026, "normalized": round(norm_dist), "weight": w["current_distance"]},
-                    "criticality": {"raw": crit_base, "normalized": round(norm_crit), "weight": w["criticality"]},
-                    "years_to_threshold": {"raw": round(years_to_threshold, 1), "normalized": round(norm_ttt), "weight": w["years_to_threshold"]},
-                },
+                "risk_score": risk["score"],
+                "risk_level": risk["level"],
+                "risk_components": risk["components"],
                 "forecast": forecast,
                 "description_ru": od["description_ru"], "description_kk": od["description_kk"], "description_en": od["description_en"],
                 "recommendation_ru": od["recommendation_ru"], "recommendation_en": od["recommendation_en"],
