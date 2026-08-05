@@ -1,0 +1,107 @@
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: #0b1120;
+  color: #e2e8f0;
+}
+
+.app-root { display: flex; flex-direction: column; min-height: 100%; }
+
+.app-header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 16px 24px; background: #0f172a; border-bottom: 1px solid #1e293b;
+}
+.app-header h1 { margin: 0; font-size: 1.4rem; }
+.subtitle { margin: 4px 0 0; color: #94a3b8; font-size: 0.9rem; max-width: 60ch; }
+.header-controls { display: flex; gap: 8px; align-items: center; }
+.header-controls button, .header-controls select {
+  background: #1e293b; color: #e2e8f0; border: 1px solid #334155;
+  border-radius: 6px; padding: 6px 12px; cursor: pointer;
+}
+
+.offline-banner {
+  background: #78350f; color: #fef3c7; padding: 6px 24px; font-size: 0.85rem;
+}
+
+.kpi-panel { display: flex; gap: 12px; padding: 16px 24px; flex-wrap: wrap; }
+.kpi-tile {
+  background: #0f172a; border: 1px solid #1e293b; border-radius: 10px;
+  padding: 12px 18px; min-width: 160px;
+}
+.kpi-value { font-size: 1.8rem; font-weight: 700; color: #38bdf8; }
+.kpi-label { font-size: 0.8rem; color: #94a3b8; margin-top: 4px; }
+
+.app-main { display: flex; flex: 1; gap: 16px; padding: 0 24px 16px; min-height: 0; }
+.map-section { flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.map-view {
+  flex: 1; min-height: 420px; border-radius: 10px; overflow: hidden;
+  background: #1e293b; border: 1px solid #1e293b;
+}
+
+.time-slider { display: flex; align-items: center; gap: 12px; padding: 8px 0; }
+.time-slider input[type="range"] { flex: 1; }
+.play-btn {
+  background: #0ea5e9; color: #0b1120; border: none; border-radius: 6px;
+  padding: 6px 14px; font-weight: 600; cursor: pointer;
+}
+.year-label { min-width: 4ch; font-variant-numeric: tabular-nums; }
+.year-missing { color: #f87171; }
+.missing-note { font-size: 0.75rem; }
+
+.layer-toggles { display: flex; gap: 16px; font-size: 0.85rem; color: #94a3b8; }
+
+.side-panel {
+  width: 340px; background: #0f172a; border: 1px solid #1e293b;
+  border-radius: 10px; padding: 16px; overflow-y: auto;
+}
+.object-list { list-style: none; padding: 0; margin: 0 0 16px; }
+.object-item {
+  display: flex; justify-content: space-between; padding: 8px 10px;
+  border-radius: 6px; cursor: pointer; border-left: 3px solid transparent;
+}
+.object-item:hover { background: #1e293b; }
+.object-item.active { background: #1e293b; border-left-color: #38bdf8; }
+.object-item.risk-high .object-risk-badge { color: #f87171; }
+.object-item.risk-medium .object-risk-badge { color: #fbbf24; }
+.object-item.risk-low .object-risk-badge { color: #4ade80; }
+.object-risk-badge { font-weight: 700; }
+
+.object-detail h3 { margin: 0 0 8px; }
+.object-description { color: #94a3b8; font-size: 0.9rem; }
+.object-metrics { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; font-size: 0.85rem; margin: 12px 0; }
+.object-metrics dt { color: #94a3b8; }
+.object-metrics dd { margin: 0; font-weight: 600; text-align: right; }
+.object-recommendation { font-size: 0.85rem; background: #1e293b; padding: 10px; border-radius: 6px; }
+
+.app-footer {
+  padding: 12px 24px; border-top: 1px solid #1e293b; color: #64748b;
+  font-size: 0.8rem; display: flex; justify-content: space-between; align-items: center; gap: 16px;
+}
+
+.report-toggle, .report-close {
+  background: #1e293b; color: #e2e8f0; border: 1px solid #334155;
+  border-radius: 6px; padding: 6px 12px; cursor: pointer;
+}
+.report-form-wrap {
+  position: fixed; bottom: 16px; right: 16px; width: 320px;
+  background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 16px;
+}
+.report-form { display: flex; flex-direction: column; gap: 10px; }
+.report-form label { display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; }
+.report-form input, .report-form select, .report-form textarea {
+  background: #1e293b; border: 1px solid #334155; color: #e2e8f0;
+  border-radius: 6px; padding: 6px 8px;
+}
+.report-error { color: #f87171; font-size: 0.85rem; }
+.report-sent { color: #4ade80; }
+
+.app-loading, .app-error {
+  display: flex; align-items: center; justify-content: center; height: 100%;
+  font-size: 1.1rem; color: #94a3b8;
+}
+
+@media (max-width: 900px) {
+  .app-main { flex-direction: column; }
+  .side-panel { width: auto; }
+}
