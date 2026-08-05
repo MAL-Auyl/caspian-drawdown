@@ -20,16 +20,27 @@ _TO_METRIC = pyproj.Transformer.from_crs(cfg.CRS_OUTPUT, cfg.CRS_METRIC, always_
 _TO_OUTPUT = pyproj.Transformer.from_crs(cfg.CRS_METRIC, cfg.CRS_OUTPUT, always_xy=True).transform
 
 
-def waypoints_to_metric_line() -> LineString:
-    line_wgs84 = LineString(cfg.COAST_WAYPOINTS)
+def waypoints_to_metric_line(waypoints: list | None = None) -> LineString:
+    line_wgs84 = LineString(waypoints or cfg.COAST_WAYPOINTS)
     return transform(_TO_METRIC, line_wgs84)
 
 
-def build_baseline(offset_m: float = cfg.BASELINE_OFFSET_M) -> LineString:
+def load_refined_waypoints(path: Path | str) -> list:
+    data = json.loads(Path(path).read_text(encoding="utf-8"))
+    return data["waypoints"]
+
+
+def build_baseline(offset_m: float = cfg.BASELINE_OFFSET_M, waypoints: list | None = None) -> LineString:
     """Смещаем осевую линию побережья перпендикулярно самой себе на offset_m
     в сторону суши, чтобы весь диапазон отступления берега укладывался
-    по одну сторону от baseline."""
-    coast = waypoints_to_metric_line()
+    по одну сторону от baseline.
+
+    По умолчанию — грубые COAST_WAYPOINTS (9 точек). Если передан waypoints
+    (например, из pipeline.transects.refine_baseline — уточнённая линия по
+    уже измеренному берегу), используется он: даёт гладкую baseline и
+    трансекты, реально расходящиеся веером по изгибу берега, а не частокол
+    параллельных линий на каждом из 8 прямых отрезков грубой линии."""
+    coast = waypoints_to_metric_line(waypoints)
     offset = coast.parallel_offset(offset_m, side="left", join_style=2)
     if offset.geom_type == "MultiLineString":
         offset = max(offset.geoms, key=lambda g: g.length)

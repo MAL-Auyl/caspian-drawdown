@@ -11,21 +11,26 @@ S2_SR_SCALE = 0.0001
 
 COLLECTIONS = {
     "LANDSAT/LT05/C02/T1_L2": {
-        "kind": "landsat", "green": "SR_B2", "swir": "SR_B5", "qa": "QA_PIXEL", "scale_m": 30,
+        "kind": "landsat", "green": "SR_B2", "swir": "SR_B5", "nir": "SR_B4", "qa": "QA_PIXEL", "scale_m": 30,
     },
     "LANDSAT/LE07/C02/T1_L2": {
-        "kind": "landsat", "green": "SR_B2", "swir": "SR_B5", "qa": "QA_PIXEL", "scale_m": 30,
+        "kind": "landsat", "green": "SR_B2", "swir": "SR_B5", "nir": "SR_B4", "qa": "QA_PIXEL", "scale_m": 30,
     },
     "LANDSAT/LC08/C02/T1_L2": {
-        "kind": "landsat", "green": "SR_B3", "swir": "SR_B6", "qa": "QA_PIXEL", "scale_m": 30,
+        "kind": "landsat", "green": "SR_B3", "swir": "SR_B6", "nir": "SR_B5", "qa": "QA_PIXEL", "scale_m": 30,
     },
     "LANDSAT/LC09/C02/T1_L2": {
-        "kind": "landsat", "green": "SR_B3", "swir": "SR_B6", "qa": "QA_PIXEL", "scale_m": 30,
+        "kind": "landsat", "green": "SR_B3", "swir": "SR_B6", "nir": "SR_B5", "qa": "QA_PIXEL", "scale_m": 30,
     },
     "COPERNICUS/S2_SR_HARMONIZED": {
-        "kind": "sentinel2", "green": "B3", "swir": "B11", "qa": "QA60", "scale_m": 10,
+        "kind": "sentinel2", "green": "B3", "swir": "B11", "nir": "B8", "qa": "QA60", "scale_m": 10,
     },
 }
+
+# Городские поверхности (асфальт, тени, промзона) отражают в NIR заметно
+# сильнее воды — используем как второе условие поверх MNDWI, чтобы не
+# принимать тёмные городские пятна за воду (см. docs/00_DECISIONS.md).
+NIR_WATER_MAX = 0.15
 
 
 def collection_for_year(year: int) -> str:

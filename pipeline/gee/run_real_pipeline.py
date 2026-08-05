@@ -28,7 +28,7 @@ from shapely.ops import transform
 from pipeline.gee import config as cfg
 from pipeline.gee.composite import build_year_composite
 from pipeline.gee.geometry import coastal_corridor
-from pipeline.gee.indices import mndwi
+from pipeline.gee.indices import mndwi_with_nir
 from pipeline.gee.otsu import otsu_threshold
 from pipeline.gee.sample_transects import WORK_SCALE_FLOOR_M, find_crossing, sample_mndwi_along_transects
 from pipeline.mock.generate import OBJECT_DEFS
@@ -45,8 +45,8 @@ def _year_mndwi_and_threshold(year: int, aoi: ee.Geometry, corridor: ee.Geometry
     composite, coll_id, n_scenes, window = build_year_composite(year, aoi)
     if composite is None:
         return None
-    index_img = mndwi(composite, coll_id)
-    threshold = otsu_threshold(index_img, corridor, scale=work_scale).getInfo()
+    index_img = mndwi_with_nir(composite, coll_id)
+    threshold = otsu_threshold(index_img.select("MNDWI"), corridor, scale=work_scale).getInfo()
     return index_img, threshold, coll_id, n_scenes, window, work_scale
 
 
@@ -80,7 +80,7 @@ def pick_direction(baseline, aoi, corridor, reference_year: int, min_hit_fractio
     return best_sign, candidates[best_sign]
 
 
-def run(years: list[int], out_dir: Path, project: str, reference_year: int):
+def run(years: list[int], out_dir: Path, project: str, reference_year: int, baseline_waypoints: list | None = None):
     ee.Initialize(project=project)
     aoi = ee.Geometry.Rectangle([
         cfg.AOI_MANGYSTAU["coordinates"][0][0][0], cfg.AOI_MANGYSTAU["coordinates"][0][0][1],
@@ -88,8 +88,10 @@ def run(years: list[int], out_dir: Path, project: str, reference_year: int):
     ])
     corridor = coastal_corridor()
 
-    baseline = build_baseline()
-    print(f"Baseline: {round(baseline.length / 1000, 1)} км, проверяю направление трансект на {reference_year}...")
+    baseline = build_baseline(waypoints=baseline_waypoints)
+    print(f"Baseline: {round(baseline.length / 1000, 1)} км "
+          f"({'уточнённая' if baseline_waypoints else 'грубая, 9 точек'}), "
+          f"проверяю направление трансект на {reference_year}...")
     sign, transects = pick_direction(baseline, aoi, corridor, reference_year)
     print(f"Трансект построено: {len(transects)}")
 
@@ -241,7 +243,15 @@ def main():
     parser.add_argument("--out", default="data/real")
     parser.add_argument("--project", default="caspian-pulse-ee")
     parser.add_argument("--reference-year", type=int, default=2026)
+    parser.add_argument("--baseline-waypoints", default=None,
+                         help="Путь к JSON с уточнённой baseline (pipeline.transects.refine_baseline). "
+                              "Без флага используются грубые COAST_WAYPOINTS из config.py.")
     args = parser.parse_args()
+
+    baseline_waypoints = None
+    if args.baseline_waypoints:
+        from pipeline.transects.baseline import load_refined_waypoints
+        baseline_waypoints = load_refined_waypoints(Path(args.baseline_waypoints))
 
     spec = args.years
     years = set()
@@ -255,7 +265,7 @@ def main():
 
     out_dir = Path(__file__).resolve().parents[2] / args.out
     out_dir.mkdir(parents=True, exist_ok=True)
-    run(years, out_dir, args.project, args.reference_year)
+    run(years, out_dir, args.project, args.reference_year, baseline_waypoints=baseline_waypoints)
 
 
 if __name__ == "__main__":

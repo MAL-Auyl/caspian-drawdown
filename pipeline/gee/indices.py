@@ -36,3 +36,13 @@ def cloud_mask(image: ee.Image, coll_id: str) -> ee.Image:
 def mndwi(image: ee.Image, coll_id: str) -> ee.Image:
     b = COLLECTIONS[coll_id]
     return image.normalizedDifference([b["green"], b["swir"]]).rename("MNDWI")
+
+
+def mndwi_with_nir(image: ee.Image, coll_id: str) -> ee.Image:
+    """MNDWI + NIR как отдельный band — второе условие поверх порога Оцу:
+    городские поверхности (асфальт, тени, промзона) заметно ярче воды в NIR,
+    даже когда MNDWI по ним ошибочно проходит порог (см. docs/00_DECISIONS.md)."""
+    b = COLLECTIONS[coll_id]
+    index = mndwi(image, coll_id)
+    nir = image.select(b["nir"]).rename("NIR")
+    return index.addBands(nir)
