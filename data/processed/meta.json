@@ -1,0 +1,40 @@
+{
+  "app": "Caspian Pulse",
+  "version": "0.1.0-mock",
+  "data_version": "mock-2026-08-05",
+  "methodology": {
+    "water_index": "MNDWI",
+    "threshold_method": "Otsu",
+    "shoreline_method": "DSAS-style transects, 500 m spacing",
+    "forecast_model": "OLS linear regression + 2nd degree polynomial",
+    "crs_metric": "EPSG:32639",
+    "validation_rmse_m": null,
+    "validation_sites": 3
+  },
+  "sources": [
+    {
+      "name": "Landsat 5/7/8/9 Collection 2 L2",
+      "provider": "USGS",
+      "license": "Public Domain"
+    },
+    {
+      "name": "Sentinel-2 MSI L2A",
+      "provider": "ESA Copernicus",
+      "license": "Open"
+    },
+    {
+      "name": "Open-Meteo Historical Archive",
+      "provider": "Open-Meteo",
+      "license": "CC BY 4.0"
+    },
+    {
+      "name": "OpenStreetMap",
+      "provider": "OSM Contributors",
+      "license": "ODbL"
+    }
+  ],
+  "disclaimer": {
+    "ru": "Аналитический инструмент поддержки решений. Не заменяет официальные гидрографические и инженерные изыскания."
+  },
+  "is_mock": true
+}

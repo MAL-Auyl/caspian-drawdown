@@ -1,0 +1,153 @@
+{
+  "generated_at": "2026-08-05T00:00:00Z",
+  "data_version": "mock-2026-08-05",
+  "region": "Mangystau",
+  "period": {
+    "from": 2000,
+    "to": 2026,
+    "years_analyzed": 26,
+    "missing": [
+      2012
+    ]
+  },
+  "coastline": {
+    "length_analyzed_km": 218.4,
+    "transects_total": 447,
+    "by_confidence": {
+      "high": 435,
+      "medium": 7,
+      "low": 5
+    }
+  },
+  "retreat": {
+    "mean_speed_m_per_year": -12.6,
+    "median_speed_m_per_year": -12.8,
+    "std_speed": 9.0,
+    "max_speed_m_per_year": -47.2,
+    "max_speed_transect_id": 311,
+    "total_mean_retreat_m": 327.4
+  },
+  "exposed_seabed_km2": 84.6,
+  "objects": {
+    "total": 8,
+    "high_risk": 5,
+    "medium_risk": 3,
+    "low_risk": 0
+  },
+  "validation": {
+    "rmse_m": null,
+    "sites": 3,
+    "control_transects": 60,
+    "note": "заполняется backtest-модулем на реальных данных"
+  },
+  "yearly_trend": [
+    {
+      "year": 2000,
+      "mean_position_m": null
+    },
+    {
+      "year": 2001,
+      "mean_position_m": null
+    },
+    {
+      "year": 2002,
+      "mean_position_m": null
+    },
+    {
+      "year": 2003,
+      "mean_position_m": null
+    },
+    {
+      "year": 2004,
+      "mean_position_m": null
+    },
+    {
+      "year": 2005,
+      "mean_position_m": null
+    },
+    {
+      "year": 2006,
+      "mean_position_m": null
+    },
+    {
+      "year": 2007,
+      "mean_position_m": null
+    },
+    {
+      "year": 2008,
+      "mean_position_m": null
+    },
+    {
+      "year": 2009,
+      "mean_position_m": null
+    },
+    {
+      "year": 2010,
+      "mean_position_m": null
+    },
+    {
+      "year": 2011,
+      "mean_position_m": null
+    },
+    {
+      "year": 2012,
+      "mean_position_m": null
+    },
+    {
+      "year": 2013,
+      "mean_position_m": null
+    },
+    {
+      "year": 2014,
+      "mean_position_m": null
+    },
+    {
+      "year": 2015,
+      "mean_position_m": null
+    },
+    {
+      "year": 2016,
+      "mean_position_m": null
+    },
+    {
+      "year": 2017,
+      "mean_position_m": null
+    },
+    {
+      "year": 2018,
+      "mean_position_m": null
+    },
+    {
+      "year": 2019,
+      "mean_position_m": null
+    },
+    {
+      "year": 2020,
+      "mean_position_m": null
+    },
+    {
+      "year": 2021,
+      "mean_position_m": null
+    },
+    {
+      "year": 2022,
+      "mean_position_m": null
+    },
+    {
+      "year": 2023,
+      "mean_position_m": null
+    },
+    {
+      "year": 2024,
+      "mean_position_m": null
+    },
+    {
+      "year": 2025,
+      "mean_position_m": null
+    },
+    {
+      "year": 2026,
+      "mean_position_m": null
+    }
+  ]
+}
