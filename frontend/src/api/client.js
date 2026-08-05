@@ -3,7 +3,10 @@ const FALLBACK_URL = "/fallback/bootstrap.json";
 
 export async function fetchBootstrap() {
   try {
-    const res = await fetch(`${API_BASE}/bootstrap`, { signal: AbortSignal.timeout(4000) });
+    // Render free-tier может "спать" и просыпаться до 50с, плюс сам bootstrap
+    // на слабом CPU (0.1 vCPU) отвечает не мгновенно — щедрый таймаут вместо
+    // преждевременного отката на офлайн-мок.
+    const res = await fetch(`${API_BASE}/bootstrap`, { signal: AbortSignal.timeout(45000) });
     if (!res.ok) throw new Error(`bootstrap ${res.status}`);
     const data = await res.json();
     return { data, source: "backend" };
