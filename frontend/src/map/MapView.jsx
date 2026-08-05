@@ -40,6 +40,8 @@ export default function MapView() {
     });
     L.tileLayer("/tiles/{z}/{x}/{y}.png", {
       maxZoom: 14,
+      maxNativeZoom: 11, // тайлы скачаны только до 11 зума — дальше Leaflet
+      // растягивает имеющиеся, вместо того чтобы запрашивать несуществующие
       errorTileUrl: "",
       attribution: "Caspian Pulse — локальные тайлы",
     }).addTo(map);
