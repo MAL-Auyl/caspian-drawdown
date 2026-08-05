@@ -26,11 +26,13 @@ _TO_OUTPUT = pyproj.Transformer.from_crs(cfg.CRS_METRIC, cfg.CRS_OUTPUT, always_
 RNG = np.random.default_rng(7)
 
 
-def build_exposed_seabed(width_m: float = 2500) -> dict:
-    """Полоса вдоль настоящей осевой линии побережья — не претендует на
-    точную площадь осушенного дна (для этого нужна векторизация MNDWI-маски
-    по годам), но геометрически совпадает с реальным берегом на карте."""
-    coast_wgs84 = LineString(cfg.COAST_WAYPOINTS)
+def build_exposed_seabed(shoreline_path: Path, width_m: float = 1500) -> dict:
+    """Полоса вокруг УЖЕ ОЧИЩЕННОЙ реальной линии берега (не грубых
+    COAST_WAYPOINTS) — гарантированно совпадает с тем, что нарисовано на
+    карте. Не претендует на точную площадь осушенного дна (для этого нужна
+    векторизация MNDWI-маски по годам и сравнение 2000 vs 2026)."""
+    shoreline_fc = json.loads(shoreline_path.read_text(encoding="utf-8"))
+    coast_wgs84 = LineString(shoreline_fc["features"][0]["geometry"]["coordinates"])
     coast_metric = transform(_TO_METRIC, coast_wgs84)
     strip = coast_metric.buffer(width_m, cap_style=2, join_style=2)
     strip_wgs84 = transform(_TO_OUTPUT, strip)
@@ -63,7 +65,7 @@ def build_dust_zones() -> dict:
     features = []
     for i, deg in enumerate(range(0, 360, 45)):
         rad = math.radians(deg)
-        r_in, r_out = 0.05, 0.25
+        r_in, r_out = 0.015, 0.08  # ~1.5-8 км — было 25 км, перекрывало весь город
         p1 = (cx + r_in * math.sin(rad), cy + r_in * math.cos(rad))
         p2 = (cx + r_out * math.sin(rad), cy + r_out * math.cos(rad))
         p3 = (cx + r_out * math.sin(rad + 0.7), cy + r_out * math.cos(rad + 0.7))
@@ -87,7 +89,7 @@ def main():
     args = parser.parse_args()
     out_dir = REPO_ROOT / args.out
 
-    seabed = build_exposed_seabed()
+    seabed = build_exposed_seabed(out_dir / "shorelines" / "shoreline_2026.geojson")
     dust = build_dust_zones()
     (out_dir / "exposed_seabed.geojson").write_text(json.dumps(seabed, ensure_ascii=False), encoding="utf-8")
     (out_dir / "dust_zones.geojson").write_text(json.dumps(dust, ensure_ascii=False), encoding="utf-8")

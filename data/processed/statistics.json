@@ -1,6 +1,6 @@
 {
   "generated_at": "2026-08-05T00:00:00Z",
-  "data_version": "real-2026-08-05",
+  "data_version": "real-2026-08-05-v3-corridor-filtered",
   "region": "Mangystau",
   "period": {
     "from": 2000,
@@ -15,25 +15,25 @@
     "transects_total": 539,
     "transects_well_observed": 257,
     "by_confidence": {
-      "high": 23,
-      "medium": 138,
-      "low": 378
+      "high": 14,
+      "medium": 58,
+      "low": 467
     }
   },
   "retreat": {
-    "mean_speed_m_per_year": -8.6,
-    "median_speed_m_per_year": -3.8,
-    "std_speed": 27.0,
-    "max_speed_m_per_year": -206.9,
-    "max_speed_transect_id": 9,
-    "total_mean_retreat_m": -28.8
+    "mean_speed_m_per_year": -1.3,
+    "median_speed_m_per_year": 0.0,
+    "std_speed": 9.9,
+    "max_speed_m_per_year": -68.8,
+    "max_speed_transect_id": 469,
+    "total_mean_retreat_m": 65.3
   },
   "exposed_seabed_km2": 84.6,
   "objects": {
     "total": 8,
-    "high_risk": 4,
-    "medium_risk": 4,
-    "low_risk": 0
+    "high_risk": 2,
+    "medium_risk": 5,
+    "low_risk": 1
   },
   "validation": {
     "rmse_m": null,
@@ -147,5 +147,5 @@
       "mean_position_m": null
     }
   ],
-  "note": "Агрегаты (retreat.*) считаются по трансектам с >=15 валидными годами (233 из 539) — на разреженных наблюдениях единичные ложные срабатывания искажают среднее сильнее, чем помогает фильтр выбросов."
+  "note": "Позиции вне ожидаемого коридора берега (COAST_WAYPOINTS, допуск 3000м) отброшены как ложные срабатывания. Агрегаты — по трансектам с >=15 валидными годами (257 из 539). После этой чистки совокупный тренд слабее, чем показывал мок (-12.6) — честная оценка на текущих грубых COAST_WAYPOINTS, требует уточнения по OSM для более уверенного числа."
 }

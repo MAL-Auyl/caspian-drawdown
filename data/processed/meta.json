@@ -1,7 +1,7 @@
 {
   "app": "Caspian Pulse",
   "version": "0.2.0-real",
-  "data_version": "real-2026-08-05",
+  "data_version": "real-2026-08-05-v3-corridor-filtered",
   "methodology": {
     "water_index": "MNDWI",
     "threshold_method": "Otsu",
