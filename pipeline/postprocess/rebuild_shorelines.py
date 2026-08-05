@@ -27,26 +27,38 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 _TO_METRIC = pyproj.Transformer.from_crs(cfg.CRS_OUTPUT, cfg.CRS_METRIC, always_xy=True).transform
 _TO_OUTPUT = pyproj.Transformer.from_crs(cfg.CRS_METRIC, cfg.CRS_OUTPUT, always_xy=True).transform
 
-WINDOW = 5
-HAMPEL_K = 3.0
-FLOOR_M = 800.0
+WINDOW = 8
+HAMPEL_K = 2.5
+FLOOR_M = 400.0
 
 
-def spatial_filter(ordered_distances: list[float]) -> list[float | None]:
+def spatial_filter(ordered_distances: list[float], passes: int = 3) -> list[float | None]:
     """Точки, сильно отличающиеся от локальной медианы соседей вдоль берега,
-    заменяются на None (пропуск в линии) вместо того, чтобы давать скачок."""
-    n = len(ordered_distances)
-    out = list(ordered_distances)
-    for i in range(n):
-        lo, hi = max(0, i - WINDOW), min(n, i + WINDOW + 1)
-        neighborhood = [ordered_distances[j] for j in range(lo, hi) if j != i]
-        if len(neighborhood) < 3:
-            continue
-        med = float(np.median(neighborhood))
-        mad = float(np.median(np.abs(np.array(neighborhood) - med)))
-        threshold = max(HAMPEL_K * 1.4826 * mad, FLOOR_M)
-        if abs(ordered_distances[i] - med) > threshold:
-            out[i] = None
+    заменяются на None (пропуск в линии) вместо того, чтобы давать скачок.
+
+    Несколько проходов подряд: если два-три плохих значения стоят рядом,
+    за один проход локальная медиана окна сама смещена ими — и часть
+    кластера проходит фильтр. Повторные проходы (уже без ранее отброшенных
+    точек в окне) дочищают такие кластеры."""
+    out: list[float | None] = list(ordered_distances)
+    for _ in range(passes):
+        changed = False
+        current = list(out)
+        for i in range(len(current)):
+            if current[i] is None:
+                continue
+            lo, hi = max(0, i - WINDOW), min(len(current), i + WINDOW + 1)
+            neighborhood = [current[j] for j in range(lo, hi) if j != i and current[j] is not None]
+            if len(neighborhood) < 3:
+                continue
+            med = float(np.median(neighborhood))
+            mad = float(np.median(np.abs(np.array(neighborhood) - med)))
+            threshold = max(HAMPEL_K * 1.4826 * mad, FLOOR_M)
+            if abs(current[i] - med) > threshold:
+                out[i] = None
+                changed = True
+        if not changed:
+            break
     return out
 
 
