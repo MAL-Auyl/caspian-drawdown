@@ -1,7 +1,14 @@
+import { useState } from "react";
 import { useAppStore } from "../store/useAppStore";
 import { t } from "../i18n/translations";
 
 const RISK_LABEL = { high: "высокий", medium: "средний", low: "низкий" };
+
+const SCENARIOS = [
+  { key: "optimistic", label: "Оптимистичный" },
+  { key: "baseline", label: "Базовый" },
+  { key: "pessimistic", label: "Пессимистичный" },
+];
 
 function ObjectListItem({ feature, active, onSelect }) {
   const p = feature.properties;
@@ -10,6 +17,35 @@ function ObjectListItem({ feature, active, onSelect }) {
       <span className="object-name">{p.name_ru}</span>
       <span className="object-risk-badge">{p.risk_score}</span>
     </li>
+  );
+}
+
+function ScenarioForecast({ forecast }) {
+  const [scenario, setScenario] = useState("baseline");
+  const values = forecast[scenario];
+
+  return (
+    <div className="scenario-block">
+      <div className="scenario-toggle">
+        {SCENARIOS.map((s) => (
+          <button
+            key={s.key}
+            className={scenario === s.key ? "active" : ""}
+            onClick={() => setScenario(s.key)}
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
+      <dl className="object-metrics">
+        <dt>2030</dt>
+        <dd>{values["2030"]} м</dd>
+        <dt>2035</dt>
+        <dd>{values["2035"]} м</dd>
+        <dt>2040</dt>
+        <dd>{values["2040"]} м</dd>
+      </dl>
+    </div>
   );
 }
 
@@ -28,9 +64,9 @@ function ObjectDetail({ feature, lang }) {
         <dd>{p.speed_m_per_year} м/год</dd>
         <dt>{t(lang, "distance")} (2000 → 2026)</dt>
         <dd>{p.distance_to_shore_2000_m} м → {p.distance_to_shore_2026_m} м</dd>
-        <dt>{t(lang, "forecast")} 2035</dt>
-        <dd>{p.forecast.baseline["2035"]} м (сценарий baseline)</dd>
       </dl>
+      <h4 className="scenario-heading">{t(lang, "forecast")} — расстояние до воды, м</h4>
+      <ScenarioForecast forecast={p.forecast} />
       {p.recommendation_ru && (
         <p className="object-recommendation">{p.recommendation_ru}</p>
       )}
@@ -61,7 +97,7 @@ export default function ObjectPanel() {
           />
         ))}
       </ul>
-      {selected && <ObjectDetail feature={selected} lang={lang} />}
+      {selected && <ObjectDetail feature={selected} lang={lang} key={selected.properties.object_id} />}
     </div>
   );
 }

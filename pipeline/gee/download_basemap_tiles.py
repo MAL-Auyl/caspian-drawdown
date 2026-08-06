@@ -57,7 +57,15 @@ def main():
     composite, coll_id, n_scenes, window = build_year_composite(args.year, aoi)
     print(f"Композит: {coll_id}, {n_scenes} сцен, окно {window}")
 
-    vis = composite.select(["B4", "B3", "B2"]).visualize(min=0.0, max=0.3, gamma=1.2)
+    # Истинный цвет: разные спутники — разные номера каналов под red/green/blue.
+    rgb_bands = {
+        "LANDSAT/LT05/C02/T1_L2": ["SR_B3", "SR_B2", "SR_B1"],
+        "LANDSAT/LE07/C02/T1_L2": ["SR_B3", "SR_B2", "SR_B1"],
+        "LANDSAT/LC08/C02/T1_L2": ["SR_B4", "SR_B3", "SR_B2"],
+        "LANDSAT/LC09/C02/T1_L2": ["SR_B4", "SR_B3", "SR_B2"],
+        "COPERNICUS/S2_SR_HARMONIZED": ["B4", "B3", "B2"],
+    }[coll_id]
+    vis = composite.select(rgb_bands).visualize(min=0.0, max=0.3, gamma=1.2)
     map_id = vis.getMapId()
     url_format = map_id["tile_fetcher"].url_format
     print(f"Tile URL: {url_format}")

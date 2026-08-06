@@ -34,9 +34,28 @@ body {
 
 .app-main { display: flex; flex: 1; gap: 16px; padding: 0 24px 16px; min-height: 0; }
 .map-section { flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-.map-view {
-  flex: 1; min-height: 420px; border-radius: 10px; overflow: hidden;
-  background: #1e293b; border: 1px solid #1e293b;
+.map-view-wrap {
+  flex: 1; min-height: 420px; position: relative; border-radius: 10px;
+  overflow: hidden; background: #1e293b; border: 1px solid #1e293b;
+}
+.map-view { width: 100%; height: 100%; }
+
+.before-after-divider {
+  position: absolute; top: 0; bottom: 0; width: 2px; background: #fff;
+  box-shadow: 0 0 6px rgba(0,0,0,0.6); pointer-events: none; z-index: 500;
+  transform: translateX(-1px);
+}
+.before-after-labels {
+  position: absolute; top: 10px; left: 60px; right: 10px; z-index: 500;
+  display: flex; justify-content: space-between; pointer-events: none;
+}
+.before-after-labels span {
+  background: rgba(11,17,32,0.75); color: #fff; padding: 3px 10px;
+  border-radius: 5px; font-size: 0.75rem; font-weight: 600; transition: opacity 0.15s;
+}
+.before-after-range {
+  position: absolute; bottom: 10px; left: 10px; right: 10px; z-index: 500;
+  width: calc(100% - 20px); accent-color: #0ea5e9;
 }
 
 .time-slider { display: flex; align-items: center; gap: 12px; padding: 8px 0; }
@@ -73,6 +92,14 @@ body {
 .object-metrics dt { color: #94a3b8; }
 .object-metrics dd { margin: 0; font-weight: 600; text-align: right; }
 .object-recommendation { font-size: 0.85rem; background: #1e293b; padding: 10px; border-radius: 6px; }
+
+.scenario-heading { font-size: 0.85rem; color: #94a3b8; margin: 14px 0 8px; font-weight: 600; }
+.scenario-toggle { display: flex; gap: 4px; margin-bottom: 10px; }
+.scenario-toggle button {
+  flex: 1; background: #1e293b; color: #94a3b8; border: 1px solid #334155;
+  border-radius: 6px; padding: 6px 4px; font-size: 0.75rem; cursor: pointer;
+}
+.scenario-toggle button.active { background: #0ea5e9; color: #0b1120; border-color: #0ea5e9; font-weight: 600; }
 
 .app-footer {
   padding: 12px 24px; border-top: 1px solid #1e293b; color: #64748b;
