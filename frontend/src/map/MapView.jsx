@@ -2,6 +2,8 @@ import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useAppStore } from "../store/useAppStore";
+import { t } from "../i18n/translations";
+import { buildHeatMapData, isNearPoint, HEAT_COLORS } from "./riskMap";
 
 const RISK_COLORS = { high: "#dc2626", medium: "#d97706", low: "#16a34a" };
 const CATEGORY_COLORS = {
@@ -18,6 +20,7 @@ export default function MapView() {
   const dustLayerRef = useRef(null);
   const seabedLayerRef = useRef(null);
   const beforeLayerRef = useRef(null);
+  const heatMapLayerRef = useRef(null);
 
   const currentYear = useAppStore((s) => s.currentYear);
   const shorelines = useAppStore((s) => s.shorelines);
@@ -28,10 +31,13 @@ export default function MapView() {
   const showDust = useAppStore((s) => s.showDust);
   const showSeabed = useAppStore((s) => s.showSeabed);
   const showTransects = useAppStore((s) => s.showTransects);
+  const showHeatMap = useAppStore((s) => s.showHeatMap);
   const showBeforeAfter = useAppStore((s) => s.showBeforeAfter);
   const beforeAfterSplit = useAppStore((s) => s.beforeAfterSplit);
   const setBeforeAfterSplit = useAppStore((s) => s.setBeforeAfterSplit);
   const selectObject = useAppStore((s) => s.selectObject);
+  const selectedObjectId = useAppStore((s) => s.selectedObjectId);
+  const lang = useAppStore((s) => s.lang);
 
   useEffect(() => {
     if (mapRef.current) return;
@@ -60,6 +66,15 @@ export default function MapView() {
     // оставались видны независимо от положения разделителя.
     const beforePane = map.createPane("before2000");
     beforePane.style.zIndex = 350;
+
+    // Отдельный pane для Heat Map — ниже стандартного overlayPane (400),
+    // на котором уже сидят береговая линия, трансекты и объекты, чтобы
+    // тепловая подсветка никогда их не перекрывала. Fade-in 200ms через
+    // CSS-переход opacity самого pane, а не отдельных path.
+    const heatPane = map.createPane("heatmap");
+    heatPane.style.zIndex = 380;
+    heatPane.style.transition = "opacity 200ms ease";
+    heatPane.style.opacity = "0";
 
     mapRef.current = map;
     return () => {
@@ -125,6 +140,54 @@ export default function MapView() {
     }).addTo(map);
     objectLayerRef.current = layer;
   }, [objects, selectObject]);
+
+  // Heat Map риска отступления — окрашивает трансекты по нормализованной
+  // retreat_rate (см. riskMap.js). Обновляется вместе с таймлайном, т.к.
+  // retreat_rate считается по данным вплоть до currentYear.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (heatMapLayerRef.current) {
+      map.removeLayer(heatMapLayerRef.current);
+      heatMapLayerRef.current = null;
+    }
+    if (!transects || !showHeatMap) return;
+
+    const heatData = buildHeatMapData(transects, currentYear);
+    if (!heatData || !heatData.features.length) return;
+
+    const selectedObject = selectedObjectId && objects
+      ? objects.features.find((f) => f.properties.object_id === selectedObjectId)
+      : null;
+    const selectedPoint = selectedObject
+      ? L.latLng(selectedObject.geometry.coordinates[1], selectedObject.geometry.coordinates[0])
+      : null;
+
+    const layer = L.geoJSON(heatData, {
+      pane: "heatmap",
+      style: (f) => ({
+        color: f.properties.risk_color,
+        weight: f.properties.risk_weight + (isNearPoint(f, selectedPoint) ? 2 : 0),
+        opacity: 0.9,
+      }),
+      onEachFeature: (f, lyr) => {
+        const p = f.properties;
+        lyr.bindTooltip(
+          `${t(lang, "retreatLabel")}<br/><b>${p.retreat_m} ${t(lang, "meters")}</b><br/>` +
+          `${t(lang, "rateLabel")}<br/><b>${p.retreat_rate} ${t(lang, "perYear")}</b><br/>` +
+          `${t(lang, "riskLabel")}<br/><b>${t(lang, `risk_${p.risk_level}`)}</b>`,
+          { sticky: true }
+        );
+      },
+    }).addTo(map);
+    heatMapLayerRef.current = layer;
+
+    const pane = map.getPane("heatmap");
+    if (pane) {
+      pane.style.opacity = "0";
+      requestAnimationFrame(() => requestAnimationFrame(() => { pane.style.opacity = "1"; }));
+    }
+  }, [transects, currentYear, showHeatMap, selectedObjectId, objects, lang]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -192,6 +255,17 @@ export default function MapView() {
   return (
     <div className="map-view-wrap">
       <div ref={mapElRef} className="map-view" />
+      {showHeatMap && (
+        <div className="heatmap-legend">
+          <div className="heatmap-legend-title">{t(lang, "riskLevel")}</div>
+          {["low", "medium", "high", "critical"].map((level) => (
+            <div className="heatmap-legend-row" key={level}>
+              <span className="heatmap-legend-dot" style={{ background: HEAT_COLORS[level] }} />
+              {t(lang, `risk_${level}`)}
+            </div>
+          ))}
+        </div>
+      )}
       {showBeforeAfter && (
         <>
           <div className="before-after-divider" style={{ left: `${beforeAfterSplit}%` }} />

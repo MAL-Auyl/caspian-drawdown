@@ -19,6 +19,7 @@ export default function App() {
   const showDust = useAppStore((s) => s.showDust);
   const showSeabed = useAppStore((s) => s.showSeabed);
   const showTransects = useAppStore((s) => s.showTransects);
+  const showHeatMap = useAppStore((s) => s.showHeatMap);
   const showBeforeAfter = useAppStore((s) => s.showBeforeAfter);
   const toggleLayer = useAppStore((s) => s.toggleLayer);
   const dashboardRef = useRef(null);
@@ -65,6 +66,7 @@ export default function App() {
           <TimeSlider />
           <div className="layer-toggles">
             <label><input type="checkbox" checked={showTransects} onChange={() => toggleLayer("showTransects")} /> {t(lang, "transects")}</label>
+            <label><input type="checkbox" checked={showHeatMap} onChange={() => toggleLayer("showHeatMap")} /> {t(lang, "heatMap")}</label>
             <label><input type="checkbox" checked={showDust} onChange={() => toggleLayer("showDust")} /> {t(lang, "dust")}</label>
             <label><input type="checkbox" checked={showSeabed} onChange={() => toggleLayer("showSeabed")} /> {t(lang, "seabed")}</label>
             <label><input type="checkbox" checked={showBeforeAfter} onChange={() => toggleLayer("showBeforeAfter")} /> Было / стало (2000 → 2026)</label>

@@ -11,6 +11,10 @@ export const translations = {
     reportDescription: "Опишите, что вы заметили", reportCategory: "Категория",
     offlineNotice: "Backend недоступен — показаны сохранённые данные",
     methodNote: "MNDWI + порог Оцу, трансекты DSAS. Аналитический инструмент, не заменяет официальные изыскания.",
+    heatMap: "Тепловая карта риска", riskLevel: "Уровень риска",
+    retreatLabel: "Отступление", rateLabel: "Скорость", riskLabel: "Риск",
+    risk_low: "Низкий", risk_medium: "Средний", risk_high: "Высокий", risk_critical: "Критический",
+    meters: "м", perYear: "м/год",
   },
   kk: {
     title: "Caspian Pulse",
@@ -24,6 +28,10 @@ export const translations = {
     reportDescription: "Не байқағаныңызды сипаттаңыз", reportCategory: "Санат",
     offlineNotice: "Backend қолжетімсіз — сақталған деректер көрсетілді",
     methodNote: "MNDWI + Оцу шегі, DSAS трансекттері. Талдау құралы, ресми зерттеулерді алмастырмайды.",
+    heatMap: "Қауіп жылу картасы", riskLevel: "Қауіп деңгейі",
+    retreatLabel: "Шегіну", rateLabel: "Жылдамдық", riskLabel: "Қауіп",
+    risk_low: "Төмен", risk_medium: "Орташа", risk_high: "Жоғары", risk_critical: "Критикалық",
+    meters: "м", perYear: "м/жыл",
   },
   en: {
     title: "Caspian Pulse",
@@ -37,6 +45,10 @@ export const translations = {
     reportDescription: "Describe what you noticed", reportCategory: "Category",
     offlineNotice: "Backend unavailable — showing saved data",
     methodNote: "MNDWI + Otsu threshold, DSAS-style transects. A decision-support tool, not a substitute for official surveys.",
+    heatMap: "Risk heat map", riskLevel: "Risk level",
+    retreatLabel: "Retreat", rateLabel: "Rate", riskLabel: "Risk",
+    risk_low: "Low", risk_medium: "Medium", risk_high: "High", risk_critical: "Critical",
+    meters: "m", perYear: "m/year",
   },
 };
 

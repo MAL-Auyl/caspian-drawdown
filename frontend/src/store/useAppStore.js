@@ -23,6 +23,7 @@ export const useAppStore = create((set, get) => ({
   showDust: false,
   showSeabed: false,
   showTransects: true,
+  showHeatMap: false,
   showBeforeAfter: false,
   beforeAfterSplit: 50,
 
