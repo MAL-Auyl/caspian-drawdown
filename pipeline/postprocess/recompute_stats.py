@@ -47,6 +47,9 @@ def main():
         # обнуляет позиции ПОСЛЕ того, как run_real_pipeline.py уже проставил
         # это поле — без обновления здесь оно врёт, что данных больше, чем есть
 
+        outlier_years = set(reg["outlier_years"])
+        p["positions_clean"] = {str(y): (v if y not in outlier_years else None) for y, v in positions.items()}
+
         if reg["n_outliers_removed"] > 0:
             total_outliers += reg["n_outliers_removed"]
         if old_speed != reg["slope_m_per_year"]:

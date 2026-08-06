@@ -50,7 +50,7 @@ def regression_for(years: list[int], positions: dict[int, float | None]) -> dict
         return {
             "model": "linear", "slope_m_per_year": 0.0, "intercept": 0.0,
             "r_squared": 0.0, "std_error": 0.0, "ci_95_low": 0.0, "ci_95_high": 0.0,
-            "n": len(xs), "n_outliers_removed": 0,
+            "n": len(xs), "n_outliers_removed": 0, "outlier_years": [],
         }
 
     first_pass = _linregress(xs, ys)
@@ -58,12 +58,15 @@ def regression_for(years: list[int], positions: dict[int, float | None]) -> dict
 
     if n_removed == 0 or len(xs_clean) < 3:
         result = first_pass
+        outlier_years = []
     else:
         result = _linregress(xs_clean, ys_clean)
         result["n"] = len(xs)  # valid_years считаем по исходным наблюдениям, не после чистки
+        outlier_years = sorted(set(xs) - set(xs_clean))
 
     result = {k: v for k, v in result.items() if k not in ("slope_raw", "intercept_raw")}
     result["n_outliers_removed"] = n_removed
+    result["outlier_years"] = outlier_years
     return result
 
 

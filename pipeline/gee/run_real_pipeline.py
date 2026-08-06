@@ -156,6 +156,7 @@ def run(years: list[int], out_dir: Path, project: str, reference_year: int, base
                 "transect_id": rec["transect_id"],
                 "baseline_distance_m": round(i * cfg.TRANSECT_SPACING_M, 1),
                 "positions": {str(y): rec["positions"].get(y) for y in years},
+                "positions_clean": {str(y): rec["positions_clean"].get(y) for y in years},
                 "total_retreat_m": rec["total_retreat_m"],
                 "speed_m_per_year": rec["speed_m_per_year"],
                 "r_squared": rec["r_squared"],
@@ -213,7 +214,10 @@ def _build_objects(transect_features, years):
         if best is None:
             continue
         speed = best["properties"]["speed_m_per_year"]
-        positions = best["properties"]["positions"]
+        # positions_clean, не positions: снимок на конкретную дату не должен
+        # брать значение года, который сама регрессия отбросила как выброс
+        # Хампеля (см. pipeline/transects/displacement.py).
+        positions = best["properties"]["positions_clean"]
         last_year = years[-1]
 
         d2000 = _nearest_distance(positions, 2000, years)

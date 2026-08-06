@@ -16,11 +16,20 @@ def build_transect_record(transect_id: int, transect: LineString, positions: dic
     if len(valid) >= 2:
         total_retreat = round(positions[valid[0]] - positions[valid[-1]], 1)
 
+    outlier_years = set(reg["outlier_years"])
+    # Годы, отброшенные как выброс Хампеля из регрессии, не должны попадать
+    # и в "снимок на дату" (distance_to_shore_2010_m и т.п.) — иначе объект
+    # покажет заведомо контаминированное значение конкретного года, даже
+    # если тренд его уже корректно проигнорировал (грабля: МАЭК показывал
+    # 1204 м в 2010-м на фоне стабильных ~4200 м во все соседние годы).
+    positions_clean = {y: (v if y not in outlier_years else None) for y, v in positions.items()}
+
     conf = confidence_of(reg["r_squared"], reg["n"])
     return {
         "transect_id": transect_id,
         "geometry_metric": transect,
         "positions": positions,
+        "positions_clean": positions_clean,
         "total_retreat_m": total_retreat,
         "speed_m_per_year": reg["slope_m_per_year"],
         "r_squared": reg["r_squared"],
