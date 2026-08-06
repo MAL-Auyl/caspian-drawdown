@@ -32,4 +32,18 @@ export async function submitReport(payload) {
   return body;
 }
 
+export async function sendChatMessage(message, history, lang) {
+  const res = await fetch(`${API_BASE}/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message, history, lang }),
+  });
+  const body = await res.json().catch(() => null);
+  if (!res.ok) {
+    const errMessage = body?.detail?.detail || body?.detail || "Не удалось получить ответ";
+    throw new Error(errMessage);
+  }
+  return body.reply;
+}
+
 export { API_BASE };

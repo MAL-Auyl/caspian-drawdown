@@ -15,6 +15,9 @@ export const translations = {
     retreatLabel: "Отступление", rateLabel: "Скорость", riskLabel: "Риск",
     risk_low: "Низкий", risk_medium: "Средний", risk_high: "Высокий", risk_critical: "Критический",
     meters: "м", perYear: "м/год",
+    chatTitle: "Ассистент Caspian Pulse", chatSubtitle: "Спросите о проекте",
+    chatGreeting: "Привет! Я помогу разобраться в проекте — спросите о слоях карты, данных или методологии.",
+    chatPlaceholder: "Спросите что-нибудь...", chatSend: "Отправить",
   },
   kk: {
     title: "Caspian Pulse",
@@ -32,6 +35,9 @@ export const translations = {
     retreatLabel: "Шегіну", rateLabel: "Жылдамдық", riskLabel: "Қауіп",
     risk_low: "Төмен", risk_medium: "Орташа", risk_high: "Жоғары", risk_critical: "Критикалық",
     meters: "м", perYear: "м/жыл",
+    chatTitle: "Caspian Pulse көмекшісі", chatSubtitle: "Жоба туралы сұраңыз",
+    chatGreeting: "Сәлем! Жоба туралы түсінуге көмектесемін — карта қабаттары, деректер немесе әдістеме туралы сұраңыз.",
+    chatPlaceholder: "Бірдеңе сұраңыз...", chatSend: "Жіберу",
   },
   en: {
     title: "Caspian Pulse",
@@ -49,6 +55,9 @@ export const translations = {
     retreatLabel: "Retreat", rateLabel: "Rate", riskLabel: "Risk",
     risk_low: "Low", risk_medium: "Medium", risk_high: "High", risk_critical: "Critical",
     meters: "m", perYear: "m/year",
+    chatTitle: "Caspian Pulse Assistant", chatSubtitle: "Ask about the project",
+    chatGreeting: "Hi! I can help you understand the project — ask about map layers, data, or methodology.",
+    chatPlaceholder: "Ask something...", chatSend: "Send",
   },
 };
 

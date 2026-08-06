@@ -10,11 +10,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "framer-motion": "^13.0.0",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",
     "leaflet": "^1.9.4",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
+    "react-router-dom": "^7.18.2",
     "zustand": "^5.0.2"
   },
   "devDependencies": {
