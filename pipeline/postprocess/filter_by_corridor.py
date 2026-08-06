@@ -44,13 +44,21 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--in", dest="in_dir", default="data/processed")
     parser.add_argument("--tolerance", type=float, default=TOLERANCE_M)
+    parser.add_argument("--waypoints", default=None,
+                         help="JSON с ожидаемой линией берега (refine_baseline.py). "
+                              "Без флага — грубые COAST_WAYPOINTS из config.py.")
     args = parser.parse_args()
 
     base = REPO_ROOT / args.in_dir
     path = base / "transects.geojson"
     fc = json.loads(path.read_text(encoding="utf-8"))
 
-    coast_metric = transform(_TO_METRIC, LineString(cfg.COAST_WAYPOINTS))
+    if args.waypoints:
+        from pipeline.transects.baseline import load_refined_waypoints
+        waypoints = load_refined_waypoints(args.waypoints)
+    else:
+        waypoints = cfg.COAST_WAYPOINTS
+    coast_metric = transform(_TO_METRIC, LineString(waypoints))
 
     total_nulled, transects_without_expected = 0, 0
     for f in fc["features"]:

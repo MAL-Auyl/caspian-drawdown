@@ -43,6 +43,9 @@ def main():
         p["risk_class"] = risk_class_of(reg["slope_m_per_year"])
         p["total_retreat_m"] = total_retreat
         p["outliers_removed"] = reg["n_outliers_removed"]
+        p["valid_years"] = len(valid)  # была устаревшей: filter_by_corridor.py
+        # обнуляет позиции ПОСЛЕ того, как run_real_pipeline.py уже проставил
+        # это поле — без обновления здесь оно врёт, что данных больше, чем есть
 
         if reg["n_outliers_removed"] > 0:
             total_outliers += reg["n_outliers_removed"]

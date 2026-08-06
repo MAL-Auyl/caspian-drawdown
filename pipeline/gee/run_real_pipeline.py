@@ -189,16 +189,27 @@ def _nearest_distance(positions: dict, target_year: int, years: list[int]) -> fl
     return abs(positions[str(candidates[0])]) if candidates else 0.0
 
 
-def _build_objects(transect_features, years):
+def _nearest_with_data(transect_features, lon, lat, min_valid_years=10):
+    """Ближайшая трансекта, у которой реально есть измерения — не просто
+    геометрически ближайшая. Промзоны/плотная застройка (например, у самого
+    водозабора МАЭК) иногда дают сплошную полосу трансект с 0 валидных лет
+    (все точки отфильтрованы как выбросы) — брать такую как "ближайшую"
+    значит подменять реальный риск фиктичным нулём."""
     import math
+
+    def dist(f):
+        ax, ay = f["properties"]["anchor"]
+        return math.hypot(ax - lon, ay - lat)
+
+    with_data = [f for f in transect_features if f["properties"]["valid_years"] >= min_valid_years]
+    pool = with_data or transect_features
+    return min(pool, key=dist) if pool else None
+
+
+def _build_objects(transect_features, years):
     features = []
     for od in OBJECT_DEFS:
-        best, best_d = None, float("inf")
-        for f in transect_features:
-            ax, ay = f["properties"]["anchor"]
-            d = math.hypot(ax - od["lon"], ay - od["lat"])
-            if d < best_d:
-                best, best_d = f, d
+        best = _nearest_with_data(transect_features, od["lon"], od["lat"])
         if best is None:
             continue
         speed = best["properties"]["speed_m_per_year"]
