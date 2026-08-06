@@ -42,11 +42,11 @@ body {
 
 .before-after-divider {
   position: absolute; top: 0; bottom: 0; width: 2px; background: #fff;
-  box-shadow: 0 0 6px rgba(0,0,0,0.6); pointer-events: none; z-index: 500;
+  box-shadow: 0 0 6px rgba(0,0,0,0.6); pointer-events: none; z-index: 1001;
   transform: translateX(-1px);
 }
 .before-after-labels {
-  position: absolute; top: 10px; left: 60px; right: 10px; z-index: 500;
+  position: absolute; top: 10px; left: 60px; right: 10px; z-index: 1001;
   display: flex; justify-content: space-between; pointer-events: none;
 }
 .before-after-labels span {
@@ -54,8 +54,11 @@ body {
   border-radius: 5px; font-size: 0.75rem; font-weight: 600; transition: opacity 0.15s;
 }
 .before-after-range {
-  position: absolute; bottom: 10px; left: 10px; right: 10px; z-index: 500;
-  width: calc(100% - 20px); accent-color: #0ea5e9;
+  /* z-index выше Leaflet-контролов (обычно ~1000) и над полосой атрибуции —
+     иначе клики в правой части (где текст атрибуции) перехватывает карта,
+     а не ползунок, и он выглядит "не работающим". */
+  position: absolute; bottom: 34px; left: 10px; right: 10px; z-index: 1001;
+  width: calc(100% - 20px); accent-color: #0ea5e9; cursor: ew-resize;
 }
 
 .time-slider { display: flex; align-items: center; gap: 12px; padding: 8px 0; }
