@@ -42,11 +42,7 @@ export default function MapView() {
       minZoom: 7,
       maxZoom: 19,
     });
-    // Живой спутниковый слой (Esri World Imagery) — полный диапазон зумов и
-    // реальное качество, вместо ограниченного набора локальных тайлов.
-    // Офлайн-режим при этом теряется — сознательный компромисс ради качества
-    // на реальном вебе; локальные тайлы (frontend/public/tiles) остаются
-    // в репозитории на случай возврата к офлайн-варианту.
+
     L.tileLayer(
       "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
       {
@@ -55,11 +51,8 @@ export default function MapView() {
       }
     ).addTo(map);
 
-    // Отдельный pane для слоя "было" (2000 год) — выше базовой подложки,
-    // ниже векторных слоёв (линия берега, трансекты, объекты), чтобы те
-    // оставались видны независимо от положения разделителя.
     const beforePane = map.createPane("before2000");
-    beforePane.style.zIndex = 350;
+    beforePane.style.zIndex = 450; // Поднимаем zIndex выше основного слоя, но ниже маркеров
 
     mapRef.current = map;
     return () => {
@@ -68,8 +61,7 @@ export default function MapView() {
     };
   }, []);
 
-  // Береговая линия текущего года — старый слой снимается ДО добавления нового,
-  // иначе Leaflet копит слои в DOM (грабля #5).
+  // Береговая линия текущего года
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -83,6 +75,7 @@ export default function MapView() {
     shorelineLayerRef.current = layer;
   }, [currentYear, shorelines]);
 
+  // Трансекты
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -101,6 +94,7 @@ export default function MapView() {
     transectLayerRef.current = layer;
   }, [transects, showTransects]);
 
+  // Объекты
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -126,6 +120,7 @@ export default function MapView() {
     objectLayerRef.current = layer;
   }, [objects, selectObject]);
 
+  // Пылевые зоны
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -140,6 +135,7 @@ export default function MapView() {
     dustLayerRef.current = layer;
   }, [dustZones, showDust]);
 
+  // Осушенное дно
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -154,9 +150,7 @@ export default function MapView() {
     seabedLayerRef.current = layer;
   }, [exposedSeabed, showSeabed]);
 
-  // Слой "было" (2000) — реальные локальные тайлы Landsat 5, отдельно
-  // скачанные тем же скриптом, что и подложка (pipeline/gee/download_basemap_tiles.py).
-  // Слой "было" (2000 год) — берем вектор из shorelines["2000"] вместо сломанных растровых тайлов
+  // Векторный слой 2000 года для режима «Было/Стало»
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -171,7 +165,7 @@ export default function MapView() {
 
     const layer = L.geoJSON(fc2000, {
       pane: "before2000",
-      style: { color: "#ef4444", weight: 3, dashArray: "6, 6" },
+      style: { color: "#ef4444", weight: 4.5, dashArray: "6, 6" },
     }).addTo(map);
 
     beforeLayerRef.current = layer;
@@ -183,45 +177,96 @@ export default function MapView() {
     };
   }, [showBeforeAfter, shorelines]);
 
-  // Клип слоя "было" по шторке — динамически скрывает/показывает линию 2000 года
+  // Динамическая обрезка слоя 2000 года по позиции ползунка
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !showBeforeAfter) return;
     const pane = map.getPane("before2000");
     if (pane) {
-      pane.style.clipPath = `inset(0 ${100 - beforeAfterSplit}% 0 0)`;
-      pane.style.webkitClipPath = `inset(0 ${100 - beforeAfterSplit}% 0 0)`;
+      const rightCut = 100 - beforeAfterSplit;
+      pane.style.clipPath = `inset(0 ${rightCut}% 0 0)`;
+      pane.style.webkitClipPath = `inset(0 ${rightCut}% 0 0)`;
     }
   }, [showBeforeAfter, beforeAfterSplit]);
 
-  // Клип слоя "было" по позиции слайдера — показываем его только слева
-  // от разделителя, справа сквозь него видна текущая (живая) подложка.
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !showBeforeAfter) return;
-    const pane = map.getPane("before2000");
-    if (pane) pane.style.clipPath = `polygon(0 0, ${beforeAfterSplit}% 0, ${beforeAfterSplit}% 100%, 0 100%)`;
-  }, [showBeforeAfter, beforeAfterSplit]);
-
   return (
-    <div className="map-view-wrap">
-      <div ref={mapElRef} className="map-view" />
+    <div className="map-view-wrap" style={{ position: "relative", width: "100%", height: "100%", overflow: "hidden" }}>
+      <div ref={mapElRef} className="map-view" style={{ width: "100%", height: "100%" }} />
       {showBeforeAfter && (
-        <>
-          <div className="before-after-divider" style={{ left: `${beforeAfterSplit}%` }} />
-          <div className="before-after-labels">
-            <span style={{ opacity: beforeAfterSplit > 8 ? 1 : 0 }}>2000</span>
-            <span style={{ opacity: beforeAfterSplit < 92 ? 1 : 0 }}>2026</span>
+        <div 
+          style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 1000 }}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          {/* Вертикальная линия разделителя */}
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              bottom: 0,
+              left: `${beforeAfterSplit}%`,
+              width: "3px",
+              backgroundColor: "#ef4444",
+              boxShadow: "0 0 8px rgba(239, 68, 68, 0.8)",
+              pointerEvents: "none",
+            }}
+          />
+          {/* Текстовые плашки лет */}
+          <div
+            style={{
+              position: "absolute",
+              top: "20px",
+              left: "20px",
+              backgroundColor: "rgba(15, 23, 42, 0.85)",
+              color: "#ef4444",
+              padding: "4px 12px",
+              borderRadius: "6px",
+              fontWeight: "bold",
+              fontSize: "14px",
+              border: "1px solid #ef4444",
+              opacity: beforeAfterSplit > 8 ? 1 : 0,
+              transition: "opacity 0.2s",
+            }}
+          >
+            Берег 2000 г. (Красный)
           </div>
+          <div
+            style={{
+              position: "absolute",
+              top: "20px",
+              right: "20px",
+              backgroundColor: "rgba(15, 23, 42, 0.85)",
+              color: "#0ea5e9",
+              padding: "4px 12px",
+              borderRadius: "6px",
+              fontWeight: "bold",
+              fontSize: "14px",
+              border: "1px solid #0ea5e9",
+              opacity: beforeAfterSplit < 92 ? 1 : 0,
+              transition: "opacity 0.2s",
+            }}
+          >
+            Берег {currentYear} г. (Голубой)
+          </div>
+          {/* Невидимый ползунок поверх карты */}
           <input
             type="range"
-            className="before-after-range"
             min={0}
             max={100}
             value={beforeAfterSplit}
             onChange={(e) => setBeforeAfterSplit(Number(e.target.value))}
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              opacity: 0,
+              cursor: "ew-resize",
+              pointerEvents: "auto",
+              margin: 0,
+            }}
           />
-        </>
+        </div>
       )}
     </div>
   );
