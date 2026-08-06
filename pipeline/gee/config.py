@@ -12,7 +12,10 @@ CRS_METRIC = "EPSG:32639"   # UTM 39N — все расчёты расстоян
 CRS_OUTPUT = "EPSG:4326"    # WGS84 — то, что уходит в API/фронтенд
 
 YEARS = list(range(2000, 2027))
-MISSING_YEARS = [2012]      # Landsat 5 закрыт, Landsat 8 ещё не запущен
+# 2003-2005: Landsat 7 SLC-off (с мая 2003) + недостаточно чистых сцен Landsat 5
+# для AOI в эти годы — пайплайн не смог собрать композит.
+# 2012: Landsat 5 закрыт, Landsat 8 ещё не запущен.
+MISSING_YEARS = [2003, 2004, 2005, 2012]
 MONTH = 7                   # только июль — минимум сгонно-нагонных искажений
 MAX_CLOUD_PCT = 10
 MAX_WIND_MS = 8.0

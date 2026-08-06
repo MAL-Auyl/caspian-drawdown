@@ -41,9 +41,11 @@ def health():
 @router.get("/bootstrap")
 def bootstrap():
     meta = dict(store.meta or {})
+    years = [y for y in range(2000, 2027)]
+    available = set(store.available_years())
     meta.update({
-        "years": [y for y in range(2000, 2027)],
-        "missing_years": [2012],
+        "years": years,
+        "missing_years": [y for y in years if y not in available],
     })
     return {
         "meta": meta,
