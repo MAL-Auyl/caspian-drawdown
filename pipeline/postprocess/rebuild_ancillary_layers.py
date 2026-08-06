@@ -13,7 +13,7 @@ from pathlib import Path
 
 import numpy as np
 import pyproj
-from shapely.geometry import LineString
+from shapely.geometry import LineString, MultiLineString, shape
 from shapely.ops import transform
 
 from pipeline.gee import config as cfg
@@ -32,7 +32,7 @@ def build_exposed_seabed(shoreline_path: Path, width_m: float = 1500) -> dict:
     карте. Не претендует на точную площадь осушенного дна (для этого нужна
     векторизация MNDWI-маски по годам и сравнение 2000 vs 2026)."""
     shoreline_fc = json.loads(shoreline_path.read_text(encoding="utf-8"))
-    coast_wgs84 = LineString(shoreline_fc["features"][0]["geometry"]["coordinates"])
+    coast_wgs84 = shape(shoreline_fc["features"][0]["geometry"])  # LineString or MultiLineString
     coast_metric = transform(_TO_METRIC, coast_wgs84)
     strip = coast_metric.buffer(width_m, cap_style=2, join_style=2)
     strip_wgs84 = transform(_TO_OUTPUT, strip)
