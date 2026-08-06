@@ -62,6 +62,28 @@ def spatial_filter(ordered_distances: list[float], passes: int = 3) -> list[floa
     return out
 
 
+# Если между соседними реально измеренными точками пропущено больше этого
+# числа трансект подряд (при шаге 500м это ~2.5км без единого детектированного
+# пересечения хоть в один год), не соединяем их прямой хордой — честнее
+# показать разрыв линии, чем нарисовать выдуманный отрезок через город
+# (грабля #6: 18-километровая "диагональ через Актау" получалась именно так,
+# когда весь портовый залив ни разу не дал ни одного валидного пересечения).
+MAX_GAP_TRANSECTS = 5
+
+
+def _split_on_gaps(valid_idx: list[int]) -> list[list[int]]:
+    segments: list[list[int]] = []
+    current: list[int] = []
+    for i in valid_idx:
+        if current and i - current[-1] > MAX_GAP_TRANSECTS:
+            segments.append(current)
+            current = []
+        current.append(i)
+    if current:
+        segments.append(current)
+    return segments
+
+
 def rebuild(base: Path):
     transects = json.loads((base / "transects.geojson").read_text(encoding="utf-8"))["features"]
     transects.sort(key=lambda f: f["properties"]["transect_id"])
@@ -83,36 +105,49 @@ def rebuild(base: Path):
             continue
         valid_distances = [distances[i] for i in valid_idx]
         filtered = spatial_filter(valid_distances)
+        filtered_by_idx = dict(zip(valid_idx, filtered))
+        kept_idx = [i for i in valid_idx if filtered_by_idx[i] is not None]
 
-        coords = []
-        for idx, d in zip(valid_idx, filtered):
-            if d is None:
+        segments_idx = _split_on_gaps(kept_idx)
+        line_segments = []
+        for seg in segments_idx:
+            if len(seg) < 2:
                 continue
-            pt_metric = metric_lines[idx].interpolate(d)
-            coords.append(list(transform(_TO_OUTPUT, pt_metric).coords)[0])
+            coords = []
+            for idx in seg:
+                pt_metric = metric_lines[idx].interpolate(filtered_by_idx[idx])
+                coords.append(list(transform(_TO_OUTPUT, pt_metric).coords)[0])
+            line_segments.append(coords)
 
-        if len(coords) < 2:
+        if not line_segments:
             skipped += 1
             continue
 
         n_removed = sum(1 for d in filtered if d is None)
+        total_len_km = sum(LineString(c).length for c in line_segments) * 96
+        geometry = (
+            {"type": "LineString", "coordinates": line_segments[0]}
+            if len(line_segments) == 1
+            else {"type": "MultiLineString", "coordinates": line_segments}
+        )
         fc = {
             "type": "FeatureCollection",
             "crs": {"type": "name", "properties": {"name": "EPSG:4326"}},
             "features": [{
                 "type": "Feature",
-                "geometry": {"type": "LineString", "coordinates": coords},
+                "geometry": geometry,
                 "properties": {
                     "year": year, "data_quality": "good",
-                    "length_km": round(LineString(coords).length * 96, 1),
+                    "length_km": round(total_len_km, 1),
                     "spatial_outliers_removed": n_removed,
+                    "n_segments": len(line_segments),
                 },
             }],
         }
         (out_dir / f"shoreline_{year}.geojson").write_text(
             json.dumps(fc, ensure_ascii=False), encoding="utf-8")
         written += 1
-        print(f"  {year}: {len(coords)} точек, {n_removed} выбросов убрано")
+        print(f"  {year}: {sum(len(s) for s in line_segments)} точек, {len(line_segments)} сегмент(ов), {n_removed} выбросов убрано")
 
     print(f"\nOK: {written} лет перестроено, {skipped} пропущено -> {out_dir}")
 
