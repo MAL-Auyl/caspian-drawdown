@@ -156,29 +156,43 @@ export default function MapView() {
 
   // Слой "было" (2000) — реальные локальные тайлы Landsat 5, отдельно
   // скачанные тем же скриптом, что и подложка (pipeline/gee/download_basemap_tiles.py).
+  // Слой "было" (2000 год) — берем вектор из shorelines["2000"] вместо сломанных растровых тайлов
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    if (!showBeforeAfter) {
+    if (beforeLayerRef.current) {
+      map.removeLayer(beforeLayerRef.current);
+      beforeLayerRef.current = null;
+    }
+    if (!showBeforeAfter) return;
+
+    const fc2000 = shorelines["2000"] || shorelines[2000];
+    if (!fc2000) return;
+
+    const layer = L.geoJSON(fc2000, {
+      pane: "before2000",
+      style: { color: "#ef4444", weight: 3, dashArray: "6, 6" },
+    }).addTo(map);
+
+    beforeLayerRef.current = layer;
+    return () => {
       if (beforeLayerRef.current) {
         map.removeLayer(beforeLayerRef.current);
         beforeLayerRef.current = null;
       }
-      return;
-    }
-    const layer = L.tileLayer("/tiles_2000/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      maxNativeZoom: 11,
-      errorTileUrl: "",
-      pane: "before2000",
-      attribution: "2000: Landsat 5 (USGS)",
-    }).addTo(map);
-    beforeLayerRef.current = layer;
-    return () => {
-      map.removeLayer(layer);
-      beforeLayerRef.current = null;
     };
-  }, [showBeforeAfter]);
+  }, [showBeforeAfter, shorelines]);
+
+  // Клип слоя "было" по шторке — динамически скрывает/показывает линию 2000 года
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !showBeforeAfter) return;
+    const pane = map.getPane("before2000");
+    if (pane) {
+      pane.style.clipPath = `inset(0 ${100 - beforeAfterSplit}% 0 0)`;
+      pane.style.webkitClipPath = `inset(0 ${100 - beforeAfterSplit}% 0 0)`;
+    }
+  }, [showBeforeAfter, beforeAfterSplit]);
 
   // Клип слоя "было" по позиции слайдера — показываем его только слева
   // от разделителя, справа сквозь него видна текущая (живая) подложка.
