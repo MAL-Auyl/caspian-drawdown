@@ -193,81 +193,64 @@ export default function MapView() {
     <div className="map-view-wrap" style={{ position: "relative", width: "100%", height: "100%", overflow: "hidden" }}>
       <div ref={mapElRef} className="map-view" style={{ width: "100%", height: "100%" }} />
       {showBeforeAfter && (
-        <div 
-          style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 1000 }}
-          onMouseDown={(e) => e.stopPropagation()}
-        >
-          {/* Вертикальная линия разделителя */}
-          <div
-            style={{
-              position: "absolute",
-              top: 0,
-              bottom: 0,
-              left: `${beforeAfterSplit}%`,
-              width: "3px",
-              backgroundColor: "#ef4444",
-              boxShadow: "0 0 8px rgba(239, 68, 68, 0.8)",
-              pointerEvents: "none",
-            }}
-          />
-          {/* Текстовые плашки лет */}
-          <div
-            style={{
-              position: "absolute",
-              top: "20px",
-              left: "20px",
-              backgroundColor: "rgba(15, 23, 42, 0.85)",
-              color: "#ef4444",
-              padding: "4px 12px",
-              borderRadius: "6px",
-              fontWeight: "bold",
-              fontSize: "14px",
-              border: "1px solid #ef4444",
-              opacity: beforeAfterSplit > 8 ? 1 : 0,
-              transition: "opacity 0.2s",
-            }}
-          >
-            Берег 2000 г. (Красный)
-          </div>
-          <div
-            style={{
-              position: "absolute",
-              top: "20px",
-              right: "20px",
-              backgroundColor: "rgba(15, 23, 42, 0.85)",
-              color: "#0ea5e9",
-              padding: "4px 12px",
-              borderRadius: "6px",
-              fontWeight: "bold",
-              fontSize: "14px",
-              border: "1px solid #0ea5e9",
-              opacity: beforeAfterSplit < 92 ? 1 : 0,
-              transition: "opacity 0.2s",
-            }}
-          >
-            Берег {currentYear} г. (Голубой)
-          </div>
-          {/* Невидимый ползунок поверх карты */}
-          <input
-            type="range"
-            min={0}
-            max={100}
-            value={beforeAfterSplit}
-            onChange={(e) => setBeforeAfterSplit(Number(e.target.value))}
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              width: "100%",
-              height: "100%",
-              opacity: 0,
-              cursor: "ew-resize",
-              pointerEvents: "auto",
-              margin: 0,
-            }}
-          />
-        </div>
-      )}
+  <div style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 1000 }}>
+    {/* Красная разделительная черта */}
+    <div
+      style={{
+        position: "absolute",
+        top: 0,
+        bottom: 0,
+        left: `${beforeAfterSplit}%`,
+        width: "2px",
+        backgroundColor: "#ef4444",
+        boxShadow: "0 0 10px rgba(239, 68, 68, 0.9)",
+      }}
+    />
+
+    {/* Кнопка-слайдер по центру линии */}
+    <div
+      style={{
+        position: "absolute",
+        top: "50%",
+        left: `${beforeAfterSplit}%`,
+        transform: "translate(-50%, -50%)",
+        width: "32px",
+        height: "32px",
+        borderRadius: "50%",
+        backgroundColor: "#1e293b",
+        border: "2px solid #ef4444",
+        color: "#fff",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: "12px",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.5)",
+      }}
+    >
+      ↔
+    </div>
+
+    {/* Узкий интерактивный ползунок по центру линии — не блокирует клики по карте! */}
+    <input
+      type="range"
+      min={0}
+      max={100}
+      value={beforeAfterSplit}
+      onChange={(e) => setBeforeAfterSplit(Number(e.target.value))}
+      style={{
+        position: "absolute",
+        top: 0,
+        left: `calc(${beforeAfterSplit}% - 20px)`,
+        width: "40px",
+        height: "100%",
+        opacity: 0,
+        cursor: "ew-resize",
+        pointerEvents: "auto",
+        margin: 0,
+      }}
+    />
+  </div>
+)}
     </div>
   );
 }
