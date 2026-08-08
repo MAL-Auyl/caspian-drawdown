@@ -180,6 +180,12 @@ def run(years: list[int], out_dir: Path, project: str, reference_year: int, base
     print(f"objects.geojson: {len(objects_features)} объектов (координаты приблизительные, см. README.md)")
 
 
+# Если ближайший сохранившийся сегмент берега для года дальше этого порога,
+# считаем, что у объекта в этом году нет ЛОКАЛЬНОГО покрытия (см. грабля #8
+# ниже), а не что он и правда так далеко — и пробуем следующий по близости год.
+_MAX_PLAUSIBLE_DISTANCE_M = 10000.0
+
+
 def _distance_to_shoreline(lon: float, lat: float, year: int, shorelines_dir: Path, years: list[int]) -> float:
     """Реальное расстояние от точки объекта до линии берега конкретного года,
     в метрике (EPSG:32639) — а НЕ значение из transects[].positions.
@@ -190,10 +196,21 @@ def _distance_to_shoreline(lon: float, lat: float, year: int, shorelines_dir: Pa
     а не расстояние от объекта до берега. Раньше оно писалось в
     distance_to_shore_*_m напрямую: для всех объектов получались похожие
     ~4000м (baseline offset + путь трансекты до земли), а не настоящая
-    дистанция (у дороги в 2м от воды выходило те же 4000м)."""
+    дистанция (у дороги в 2м от воды выходило те же 4000м).
+
+    Грабля #8: shoreline_YYYY.geojson — MultiLineString с честными разрывами
+    там, где в этом году нет ни одной валидной детекции (см.
+    rebuild_shorelines.py). Если объект стоит как раз в таком разрыве,
+    .distance() на MultiLineString всё равно вернёт число — до БЛИЖАЙШЕГО
+    сохранившегося сегмента, который может лежать в соседнем заливе за
+    много километров. Файл при этом существует и не пуст, так что старая
+    проверка "файл есть — берём" молча принимала эту дистанцию как настоящую
+    (объект «Городской пляж» получал 18871м в 2000-м при 100м в 2026-м)."""
     if year not in years:
         year = min(years, key=lambda y: abs(y - year))
     candidates = sorted(years, key=lambda y: abs(y - year))
+    pt_metric = transform(_TO_METRIC, Point(lon, lat))
+    fallback = None
     for y in candidates:
         path = shorelines_dir / f"shoreline_{y}.geojson"
         if not path.exists():
@@ -201,11 +218,13 @@ def _distance_to_shoreline(lon: float, lat: float, year: int, shorelines_dir: Pa
         fc = json.loads(path.read_text(encoding="utf-8"))
         if not fc["features"]:
             continue
-        coast = shape(fc["features"][0]["geometry"])
-        coast_metric = transform(_TO_METRIC, coast)
-        pt_metric = transform(_TO_METRIC, Point(lon, lat))
-        return coast_metric.distance(pt_metric)
-    return 0.0
+        coast_metric = transform(_TO_METRIC, shape(fc["features"][0]["geometry"]))
+        dist = coast_metric.distance(pt_metric)
+        if dist <= _MAX_PLAUSIBLE_DISTANCE_M:
+            return dist
+        if fallback is None:
+            fallback = dist
+    return fallback if fallback is not None else 0.0
 
 
 def _nearest_with_data(transect_features, lon, lat, min_valid_years=10):

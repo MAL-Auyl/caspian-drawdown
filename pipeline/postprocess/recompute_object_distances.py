@@ -30,8 +30,16 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 _TO_METRIC = pyproj.Transformer.from_crs(cfg.CRS_OUTPUT, cfg.CRS_METRIC, always_xy=True).transform
 
 
+# Держим в шаге с pipeline/gee/run_real_pipeline.py::_distance_to_shoreline —
+# та же грабля #8 (MultiLineString с честными разрывами, объект в разрыве
+# иначе получает дистанцию до чужого, далёкого сегмента берега).
+_MAX_PLAUSIBLE_DISTANCE_M = 10000.0
+
+
 def _distance_to_shoreline(lon: float, lat: float, year: int, shorelines_dir: Path, years: list[int]) -> float:
     candidates = sorted(years, key=lambda y: abs(y - year))
+    pt_metric = transform(_TO_METRIC, Point(lon, lat))
+    fallback = None
     for y in candidates:
         path = shorelines_dir / f"shoreline_{y}.geojson"
         if not path.exists():
@@ -40,9 +48,12 @@ def _distance_to_shoreline(lon: float, lat: float, year: int, shorelines_dir: Pa
         if not fc["features"]:
             continue
         coast_metric = transform(_TO_METRIC, shape(fc["features"][0]["geometry"]))
-        pt_metric = transform(_TO_METRIC, Point(lon, lat))
-        return coast_metric.distance(pt_metric)
-    return 0.0
+        dist = coast_metric.distance(pt_metric)
+        if dist <= _MAX_PLAUSIBLE_DISTANCE_M:
+            return dist
+        if fallback is None:
+            fallback = dist
+    return fallback if fallback is not None else 0.0
 
 
 def main():
