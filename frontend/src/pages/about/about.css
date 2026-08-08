@@ -13,6 +13,11 @@
   border-bottom: 1px solid rgba(148, 163, 184, 0.12);
 }
 .about-nav-brand { color: #e2e8f0; font-weight: 700; text-decoration: none; letter-spacing: -0.01em; }
+.about-nav-right { display: flex; align-items: center; gap: 10px; }
+.about-lang-select {
+  background: #1e293b; color: #e2e8f0; border: 1px solid #334155;
+  border-radius: 6px; padding: 6px 10px; font-size: 0.85rem; cursor: pointer;
+}
 .about-nav-cta {
   color: #38bdf8; text-decoration: none; font-size: 0.9rem; font-weight: 600;
   padding: 8px 14px; border-radius: 999px; border: 1px solid rgba(56, 189, 248, 0.35);

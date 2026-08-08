@@ -19,7 +19,6 @@ export default function MapView() {
   const objectLayerRef = useRef(null);
   const dustLayerRef = useRef(null);
   const seabedLayerRef = useRef(null);
-  const beforeLayerRef = useRef(null);
   const heatMapLayerRef = useRef(null);
 
   const currentYear = useAppStore((s) => s.currentYear);
@@ -32,9 +31,6 @@ export default function MapView() {
   const showSeabed = useAppStore((s) => s.showSeabed);
   const showTransects = useAppStore((s) => s.showTransects);
   const showHeatMap = useAppStore((s) => s.showHeatMap);
-  const showBeforeAfter = useAppStore((s) => s.showBeforeAfter);
-  const beforeAfterSplit = useAppStore((s) => s.beforeAfterSplit);
-  const setBeforeAfterSplit = useAppStore((s) => s.setBeforeAfterSplit);
   const selectObject = useAppStore((s) => s.selectObject);
   const selectedObjectId = useAppStore((s) => s.selectedObjectId);
   const lang = useAppStore((s) => s.lang);
@@ -60,12 +56,6 @@ export default function MapView() {
         attribution: "Tiles &copy; Esri — Source: Esri, Maxar, Earthstar Geographics",
       }
     ).addTo(map);
-
-    // Отдельный pane для слоя "было" (2000 год) — выше базовой подложки,
-    // ниже векторных слоёв (линия берега, трансекты, объекты), чтобы те
-    // оставались видны независимо от положения разделителя.
-    const beforePane = map.createPane("before2000");
-    beforePane.style.zIndex = 350;
 
     // Отдельный pane для Heat Map — ниже стандартного overlayPane (400),
     // на котором уже сидят береговая линия, трансекты и объекты, чтобы
@@ -217,41 +207,6 @@ export default function MapView() {
     seabedLayerRef.current = layer;
   }, [exposedSeabed, showSeabed]);
 
-  // Слой "было" (2000) — реальные локальные тайлы Landsat 5, отдельно
-  // скачанные тем же скриптом, что и подложка (pipeline/gee/download_basemap_tiles.py).
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
-    if (!showBeforeAfter) {
-      if (beforeLayerRef.current) {
-        map.removeLayer(beforeLayerRef.current);
-        beforeLayerRef.current = null;
-      }
-      return;
-    }
-    const layer = L.tileLayer("/tiles_2000/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      maxNativeZoom: 11,
-      errorTileUrl: "",
-      pane: "before2000",
-      attribution: "2000: Landsat 5 (USGS)",
-    }).addTo(map);
-    beforeLayerRef.current = layer;
-    return () => {
-      map.removeLayer(layer);
-      beforeLayerRef.current = null;
-    };
-  }, [showBeforeAfter]);
-
-  // Клип слоя "было" по позиции слайдера — показываем его только слева
-  // от разделителя, справа сквозь него видна текущая (живая) подложка.
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !showBeforeAfter) return;
-    const pane = map.getPane("before2000");
-    if (pane) pane.style.clipPath = `polygon(0 0, ${beforeAfterSplit}% 0, ${beforeAfterSplit}% 100%, 0 100%)`;
-  }, [showBeforeAfter, beforeAfterSplit]);
-
   return (
     <div className="map-view-wrap">
       <div ref={mapElRef} className="map-view" />
@@ -265,23 +220,6 @@ export default function MapView() {
             </div>
           ))}
         </div>
-      )}
-      {showBeforeAfter && (
-        <>
-          <div className="before-after-divider" style={{ left: `${beforeAfterSplit}%` }} />
-          <div className="before-after-labels">
-            <span style={{ opacity: beforeAfterSplit > 8 ? 1 : 0 }}>2000</span>
-            <span style={{ opacity: beforeAfterSplit < 92 ? 1 : 0 }}>2026</span>
-          </div>
-          <input
-            type="range"
-            className="before-after-range"
-            min={0}
-            max={100}
-            value={beforeAfterSplit}
-            onChange={(e) => setBeforeAfterSplit(Number(e.target.value))}
-          />
-        </>
       )}
     </div>
   );

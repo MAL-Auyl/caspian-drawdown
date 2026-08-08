@@ -1,7 +1,9 @@
 import os
 
-import anthropic
 from fastapi import APIRouter, HTTPException, Request
+from google import genai
+from google.genai import errors as genai_errors
+from google.genai import types
 from pydantic import BaseModel, Field
 
 from app.services import chat_limiter
@@ -10,7 +12,7 @@ from app.services.store import store
 
 router = APIRouter()
 
-CHAT_MODEL = "claude-opus-5"
+CHAT_MODEL = "gemini-flash-latest"  # бесплатный тир через Google AI Studio; алиас на актуальную flash-модель
 MAX_HISTORY_TURNS = 8  # сколько последних пар сообщений отдаём модели
 
 
@@ -27,10 +29,10 @@ class ChatIn(BaseModel):
 
 @router.post("/chat")
 def chat(payload: ChatIn, request: Request):
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
         raise HTTPException(status_code=503, detail={
-            "detail": "Чат-бот временно недоступен: не настроен ANTHROPIC_API_KEY на сервере.",
+            "detail": "Чат-бот временно недоступен: не настроен GEMINI_API_KEY на сервере.",
             "code": "CHAT_NOT_CONFIGURED",
         })
 
@@ -43,27 +45,32 @@ def chat(payload: ChatIn, request: Request):
 
     system_prompt = build_system_prompt(store, lang=payload.lang)
     history = payload.history[-MAX_HISTORY_TURNS * 2:]
-    messages = [{"role": m.role, "content": m.content} for m in history]
-    messages.append({"role": "user", "content": payload.message})
+    # Gemini использует роль "model" вместо "assistant"
+    contents = [
+        types.Content(role=("model" if m.role == "assistant" else "user"), parts=[types.Part(text=m.content)])
+        for m in history
+    ]
+    contents.append(types.Content(role="user", parts=[types.Part(text=payload.message)]))
 
-    client = anthropic.Anthropic(api_key=api_key)
+    client = genai.Client(api_key=api_key)
     try:
-        response = client.messages.create(
+        response = client.models.generate_content(
             model=CHAT_MODEL,
-            max_tokens=1024,
-            system=system_prompt,
-            output_config={"effort": "low"},
-            messages=messages,
+            contents=contents,
+            config=types.GenerateContentConfig(
+                system_instruction=system_prompt,
+                max_output_tokens=1024,
+            ),
         )
-    except anthropic.APIStatusError as e:
+    except genai_errors.APIError as e:
         raise HTTPException(status_code=502, detail={
-            "detail": "Ошибка при обращении к Claude API", "code": "CHAT_UPSTREAM_ERROR",
+            "detail": "Ошибка при обращении к Gemini API", "code": "CHAT_UPSTREAM_ERROR",
         }) from e
 
-    if response.stop_reason == "refusal":
+    reply = response.text
+    if not reply:
         raise HTTPException(status_code=422, detail={
             "detail": "Не удалось ответить на этот вопрос.", "code": "CHAT_REFUSAL",
         })
 
-    reply = "".join(block.text for block in response.content if block.type == "text")
     return {"reply": reply}

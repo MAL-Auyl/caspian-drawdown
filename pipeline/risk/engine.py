@@ -21,7 +21,11 @@ def compute_risk(speed_m_per_year: float, distance_m: float, category: str) -> d
     ttt = years_to_threshold(distance_m, speed_m_per_year, crit_dist)
 
     norm_speed = normalize(abs(speed_m_per_year), 0, 50)
-    norm_dist = normalize(distance_m, 0, 1000)
+    # Инвертировано: ЧЕМ БЛИЖЕ к воде, тем выше риск. Раньше normalize(distance_m, 0, 1000)
+    # росло вместе с расстоянием — дальше от берега значило выше риск, что бессмысленно.
+    # Маскировалось тем, что все расстояния (посчитанные неверно, см. run_real_pipeline.py)
+    # были ~4000м и упирались в потолок нормировки, давая всем одинаковые 100.
+    norm_dist = 100 - normalize(distance_m, 0, 1000)
     norm_crit = normalize(crit_base, 0, 10)
     norm_ttt = normalize(30 - min(ttt, 30), 0, 30)
 

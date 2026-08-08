@@ -1,63 +1,48 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useAppStore } from "../../store/useAppStore";
+import { t } from "../../i18n/translations";
 import Section from "./components/Section";
 import Card, { CardGrid } from "./components/Card";
 import FlowDiagram from "./components/FlowDiagram";
 import RoadmapTimeline from "./components/RoadmapTimeline";
 import "./about.css";
 
-const TECHNOLOGIES = [
-  { icon: "🛰️", title: "Google Earth Engine", desc: "Fetching and processing Landsat and Sentinel satellite imagery at planetary scale." },
-  { icon: "⚡", title: "FastAPI", desc: "REST API layer serving precomputed shoreline, transect and risk data." },
-  { icon: "⚛️", title: "React", desc: "Interactive dashboard interface with real-time layer controls." },
-  { icon: "🗺️", title: "Leaflet", desc: "Rendering GIS vector and raster layers on an interactive map." },
-  { icon: "🐍", title: "Python", desc: "Geospatial processing — MNDWI, Otsu thresholding, transect sampling." },
-  { icon: "📐", title: "GeoJSON", desc: "Open standard format for storing shoreline and transect geometry." },
-  { icon: "🗄️", title: "SQLite", desc: "Lightweight storage for citizen-submitted reports." },
-  { icon: "🌍", title: "OpenStreetMap / Esri", desc: "Basemap tiles for real-world geographic context." },
-];
+const TECH_KEYS = ["gee", "fastapi", "react", "leaflet", "python", "geojson", "sqlite", "osm"];
+const TECH_ICONS = { gee: "🛰️", fastapi: "⚡", react: "⚛️", leaflet: "🗺️", python: "🐍", geojson: "📐", sqlite: "🗄️", osm: "🌍" };
 
-const DATA_SOURCES = [
-  { icon: "🛰️", title: "Landsat", desc: "USGS archive, 2000–2013 coverage." },
-  { icon: "🛰️", title: "Sentinel-2", desc: "ESA Copernicus, 10m resolution, 2015–present." },
-  { icon: "🌊", title: "JRC Global Surface Water", desc: "Reference water occurrence dataset." },
-  { icon: "🗺️", title: "OpenStreetMap", desc: "Roads, settlements, infrastructure context." },
-  { icon: "🌬️", title: "Open-Meteo", desc: "Historical wind data for dust-transport modeling." },
-  { icon: "📏", title: "USGS DSAS", desc: "Digital Shoreline Analysis System methodology." },
-];
+const SOURCE_KEYS = ["landsat", "sentinel", "jrc", "osm", "meteo", "dsas"];
+const SOURCE_ICONS = { landsat: "🛰️", sentinel: "🛰️", jrc: "🌊", osm: "🗺️", meteo: "🌬️", dsas: "📏" };
 
-const ACCURACY = [
-  { title: "Open Satellite Data", desc: "Every measurement traces back to a public Landsat or Sentinel scene." },
-  { title: "Transparent Algorithms", desc: "MNDWI + Otsu thresholding — documented, not a black box." },
-  { title: "Scientific Methods", desc: "DSAS-style transects, the same approach used in published coastal research." },
-  { title: "Reproducible Results", desc: "Same inputs, same pipeline, same outputs — every time." },
-];
+const ACCURACY_KEYS = ["open", "transparent", "scientific", "repro"];
 
-const FEATURES = [
-  { icon: "📅", title: "Interactive Timeline", desc: "Scrub through 26 years of shoreline change, 2000–2026." },
-  { icon: "🔀", title: "Shoreline Comparison", desc: "Before/after split view of any two years." },
-  { icon: "🏗️", title: "Infrastructure Risk", desc: "Distance-to-shore and retreat speed for critical objects." },
-  { icon: "🔥", title: "Heat Map", desc: "Color-coded retreat intensity along the entire coast." },
-  { icon: "📊", title: "Risk Analysis", desc: "Weighted scoring across speed, distance, and criticality." },
-  { icon: "📡", title: "Offline Mode", desc: "Falls back to a bundled snapshot if the API is unreachable." },
-  { icon: "📄", title: "PDF Reports", desc: "One-click export of the current dashboard view." },
-  { icon: "📢", title: "Citizen Reporting", desc: "Let residents flag coastal issues directly on the map." },
-];
+const FEATURE_KEYS = ["timeline", "risk", "heatmap", "analysis", "offline", "pdf", "citizen"];
+const FEATURE_ICONS = { timeline: "📅", risk: "🏗️", heatmap: "🔥", analysis: "📊", offline: "📡", pdf: "📄", citizen: "📢" };
 
-const ROADMAP = [
-  { year: "2026", label: "Heat Map risk layer" },
-  { year: "2026", label: "Forecast model refinement" },
-  { year: "2027", label: "Automated notifications" },
-  { year: "2027", label: "3D digital twin of the coastline" },
-  { year: "2027", label: "Mobile version" },
+const ROAD_KEYS = [
+  { key: "heatmap", year: "2026" },
+  { key: "forecast", year: "2026" },
+  { key: "notify", year: "2027" },
+  { key: "twin", year: "2027" },
+  { key: "mobile", year: "2027" },
 ];
 
 export default function AboutPage() {
+  const lang = useAppStore((s) => s.lang);
+  const setLang = useAppStore((s) => s.setLang);
+
   return (
     <div className="about-page">
       <nav className="about-nav">
         <Link to="/" className="about-nav-brand">Caspian Pulse</Link>
-        <Link to="/" className="about-nav-cta">Explore Map →</Link>
+        <div className="about-nav-right">
+          <select value={lang} onChange={(e) => setLang(e.target.value)} className="about-lang-select">
+            <option value="ru">Русский</option>
+            <option value="kk">Қазақша</option>
+            <option value="en">English</option>
+          </select>
+          <Link to="/" className="about-nav-cta">{t(lang, "about_nav_explore")}</Link>
+        </div>
       </nav>
 
       {/* Hero */}
@@ -67,19 +52,19 @@ export default function AboutPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
         >
-          <span className="about-eyebrow">Caspian Hackathon 2026</span>
+          <span className="about-eyebrow">{t(lang, "about_eyebrow")}</span>
           <h1 className="about-hero-title">Caspian Pulse</h1>
-          <p className="about-hero-lead">AI-powered coastal monitoring platform for the Caspian Sea.</p>
-          <p className="about-hero-sub">Turning satellite imagery into actionable environmental intelligence.</p>
+          <p className="about-hero-lead">{t(lang, "about_hero_lead")}</p>
+          <p className="about-hero-sub">{t(lang, "about_hero_sub")}</p>
           <div className="about-hero-actions">
-            <Link to="/" className="about-btn about-btn-primary">Explore Map</Link>
+            <Link to="/" className="about-btn about-btn-primary">{t(lang, "about_btn_explore")}</Link>
             <a
               href="https://github.com/MAL-Auyl/caspian-drawdown"
               target="_blank"
               rel="noreferrer"
               className="about-btn about-btn-ghost"
             >
-              GitHub
+              {t(lang, "about_btn_github")}
             </a>
           </div>
         </motion.div>
@@ -87,155 +72,130 @@ export default function AboutPage() {
       </header>
 
       {/* Mission */}
-      <Section kicker="Why" title="The Caspian Sea is rapidly changing.">
-        <p className="about-lead-text">
-          Retreating coastlines affect drinking water infrastructure, ports, tourism and coastal ecosystems.
-        </p>
-        <p className="about-body-text">
-          Caspian Pulse transforms satellite imagery into understandable information that helps governments,
-          researchers and infrastructure operators make informed decisions — grounded in measurement, not guesswork.
-        </p>
+      <Section kicker={t(lang, "about_mission_kicker")} title={t(lang, "about_mission_title")}>
+        <p className="about-lead-text">{t(lang, "about_mission_lead")}</p>
+        <p className="about-body-text">{t(lang, "about_mission_body")}</p>
       </Section>
 
       {/* How it works */}
-      <Section kicker="Pipeline" title="How it works" className="about-section-alt">
+      <Section kicker={t(lang, "about_pipeline_kicker")} title={t(lang, "about_pipeline_title")} className="about-section-alt">
         <FlowDiagram
           steps={[
-            "Satellite Imagery",
-            "Google Earth Engine",
-            "Water Detection (MNDWI)",
-            "Shoreline Extraction",
-            "Transect Analysis",
-            "Risk Assessment",
-            "Interactive Dashboard",
-            "Reports",
+            t(lang, "about_step_satellite"), t(lang, "about_step_gee"), t(lang, "about_step_water"),
+            t(lang, "about_step_shoreline"), t(lang, "about_step_transect"), t(lang, "about_step_risk"),
+            t(lang, "about_step_dashboard"), t(lang, "about_step_reports"),
           ]}
         />
       </Section>
 
       {/* Technologies */}
-      <Section kicker="Stack" title="Technologies">
+      <Section kicker={t(lang, "about_tech_kicker")} title={t(lang, "about_tech_title")}>
         <CardGrid>
-          {TECHNOLOGIES.map((tItem) => (
-            <Card key={tItem.title} icon={tItem.icon} title={tItem.title}>
-              {tItem.desc}
+          {TECH_KEYS.map((key) => (
+            <Card key={key} icon={TECH_ICONS[key]} title={t(lang, `about_tech_${key}_title`)}>
+              {t(lang, `about_tech_${key}_desc`)}
             </Card>
           ))}
         </CardGrid>
       </Section>
 
       {/* Data Sources */}
-      <Section kicker="Sources" title="Data Sources" className="about-section-alt">
+      <Section kicker={t(lang, "about_sources_kicker")} title={t(lang, "about_sources_title")} className="about-section-alt">
         <CardGrid>
-          {DATA_SOURCES.map((d) => (
-            <Card key={d.title} icon={d.icon} title={d.title}>
-              {d.desc}
+          {SOURCE_KEYS.map((key) => (
+            <Card key={key} icon={SOURCE_ICONS[key]} title={t(lang, `about_src_${key}_title`)}>
+              {t(lang, `about_src_${key}_desc`)}
             </Card>
           ))}
         </CardGrid>
       </Section>
 
       {/* Why shorelines look irregular */}
-      <Section kicker="Data integrity" title="Why are shoreline lines irregular?">
+      <Section kicker={t(lang, "about_shoreline_kicker")} title={t(lang, "about_shoreline_title")}>
         <div className="about-split">
           <div>
-            <p className="about-body-text">
-              The shoreline displayed in Caspian Pulse is generated automatically from real satellite imagery.
-            </p>
-            <p className="about-body-text">
-              Unlike manually drawn maps, every shoreline follows actual pixel boundaries extracted from Landsat
-              and Sentinel imagery.
-            </p>
-            <p className="about-body-text">
-              Small irregularities reflect the true satellite observations rather than artistic smoothing. This
-              approach preserves scientific accuracy and ensures transparent environmental analysis.
-            </p>
+            <p className="about-body-text">{t(lang, "about_shoreline_p1")}</p>
+            <p className="about-body-text">{t(lang, "about_shoreline_p2")}</p>
+            <p className="about-body-text">{t(lang, "about_shoreline_p3")}</p>
           </div>
           <FlowDiagram
-            steps={["Satellite Pixels", "Water Classification", "Extracted Shoreline", "Real Coastline"]}
+            steps={[
+              t(lang, "about_step_pixels"), t(lang, "about_step_classification"),
+              t(lang, "about_step_extracted"), t(lang, "about_step_real"),
+            ]}
           />
         </div>
       </Section>
 
       {/* Heat Map */}
-      <Section kicker="Visualization" title="Heat Map / Risk Map" className="about-section-alt">
-        <p className="about-body-text">
-          The Heat Map highlights areas where shoreline retreat is most significant — a single glance replaces
-          hundreds of individual transect readings.
-        </p>
+      <Section kicker={t(lang, "about_heat_kicker")} title={t(lang, "about_heat_title")} className="about-section-alt">
+        <p className="about-body-text">{t(lang, "about_heat_body")}</p>
         <div className="heat-legend">
-          <div className="heat-legend-row"><span className="heat-dot heat-low" />Low change</div>
-          <div className="heat-legend-row"><span className="heat-dot heat-medium" />Moderate change</div>
-          <div className="heat-legend-row"><span className="heat-dot heat-high" />High change</div>
-          <div className="heat-legend-row"><span className="heat-dot heat-critical" />Critical change</div>
+          <div className="heat-legend-row"><span className="heat-dot heat-low" />{t(lang, "heat_low")}</div>
+          <div className="heat-legend-row"><span className="heat-dot heat-medium" />{t(lang, "heat_medium")}</div>
+          <div className="heat-legend-row"><span className="heat-dot heat-high" />{t(lang, "heat_high")}</div>
+          <div className="heat-legend-row"><span className="heat-dot heat-critical" />{t(lang, "heat_critical")}</div>
         </div>
       </Section>
 
       {/* AI Analysis */}
-      <Section kicker="Analytics" title="AI Analysis">
-        <p className="about-body-text">
-          Artificial intelligence is used to automatically analyze shoreline changes, identify long-term spatial
-          patterns, and estimate infrastructure risk.
-        </p>
-        <p className="about-body-text about-emphasis">
-          The system does not generate fictional predictions. All analytics are based on real satellite
-          observations and transparent algorithms.
-        </p>
+      <Section kicker={t(lang, "about_ai_kicker")} title={t(lang, "about_ai_title")}>
+        <p className="about-body-text">{t(lang, "about_ai_body1")}</p>
+        <p className="about-body-text about-emphasis">{t(lang, "about_ai_body2")}</p>
       </Section>
 
       {/* Why GEE */}
-      <Section kicker="Infrastructure" title="Why Google Earth Engine?" className="about-section-alt">
-        <p className="about-body-text">
-          Google Earth Engine provides direct access to decades of satellite imagery without downloading
-          terabytes of raw data.
-        </p>
-        <p className="about-body-text">
-          It enables reproducible and scalable environmental analysis — the same query returns the same result,
-          whether it's run once or a thousand times.
-        </p>
+      <Section kicker={t(lang, "about_gee_kicker")} title={t(lang, "about_gee_title")} className="about-section-alt">
+        <p className="about-body-text">{t(lang, "about_gee_body1")}</p>
+        <p className="about-body-text">{t(lang, "about_gee_body2")}</p>
       </Section>
 
       {/* Accuracy */}
-      <Section kicker="Trust" title="Accuracy">
+      <Section kicker={t(lang, "about_accuracy_kicker")} title={t(lang, "about_accuracy_title")}>
         <CardGrid columns={4}>
-          {ACCURACY.map((a) => (
-            <Card key={a.title} icon="✔" title={a.title}>
-              {a.desc}
+          {ACCURACY_KEYS.map((key) => (
+            <Card key={key} icon="✔" title={t(lang, `about_acc_${key}_title`)}>
+              {t(lang, `about_acc_${key}_desc`)}
             </Card>
           ))}
         </CardGrid>
       </Section>
 
       {/* Architecture */}
-      <Section kicker="Under the hood" title="Project Architecture" className="about-section-alt">
-        <FlowDiagram steps={["Frontend", "REST API", "Processing Pipeline", "Google Earth Engine", "Satellite Imagery"]} />
+      <Section kicker={t(lang, "about_arch_kicker")} title={t(lang, "about_arch_title")} className="about-section-alt">
+        <FlowDiagram
+          steps={[
+            t(lang, "about_arch_frontend"), t(lang, "about_arch_api"), t(lang, "about_arch_pipeline"),
+            t(lang, "about_step_gee"), t(lang, "about_step_satellite"),
+          ]}
+        />
       </Section>
 
       {/* Features */}
-      <Section kicker="Capabilities" title="Features">
+      <Section kicker={t(lang, "about_features_kicker")} title={t(lang, "about_features_title")}>
         <CardGrid>
-          {FEATURES.map((f) => (
-            <Card key={f.title} icon={f.icon} title={f.title}>
-              {f.desc}
+          {FEATURE_KEYS.map((key) => (
+            <Card key={key} icon={FEATURE_ICONS[key]} title={t(lang, `about_feat_${key}_title`)}>
+              {t(lang, `about_feat_${key}_desc`)}
             </Card>
           ))}
         </CardGrid>
       </Section>
 
       {/* Roadmap */}
-      <Section kicker="What's next" title="Future Roadmap" className="about-section-alt">
-        <RoadmapTimeline items={ROADMAP} />
+      <Section kicker={t(lang, "about_roadmap_kicker")} title={t(lang, "about_roadmap_title")} className="about-section-alt">
+        <RoadmapTimeline items={ROAD_KEYS.map((r) => ({ year: r.year, label: t(lang, `about_road_${r.key}`) }))} />
       </Section>
 
       <footer className="about-footer">
         <div className="about-footer-links">
-          <span>Open Data:</span>
+          <span>{t(lang, "about_footer_opendata")}</span>
           <a href="https://earthengine.google.com/" target="_blank" rel="noreferrer">Google Earth Engine</a>
           <a href="https://www.openstreetmap.org/" target="_blank" rel="noreferrer">OpenStreetMap</a>
           <a href="https://www.esa.int/" target="_blank" rel="noreferrer">ESA</a>
           <a href="https://www.usgs.gov/" target="_blank" rel="noreferrer">USGS</a>
         </div>
-        <p>Built for Caspian Hackathon 2026.</p>
+        <p>{t(lang, "about_footer_built")}</p>
       </footer>
     </div>
   );

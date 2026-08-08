@@ -24,8 +24,6 @@ export const useAppStore = create((set, get) => ({
   showSeabed: false,
   showTransects: true,
   showHeatMap: false,
-  showBeforeAfter: false,
-  beforeAfterSplit: 50,
 
   setBootstrap(data, source) {
     const years = data.meta?.years ?? [];
@@ -83,9 +81,5 @@ export const useAppStore = create((set, get) => ({
 
   toggleLayer(name) {
     set((s) => ({ [name]: !s[name] }));
-  },
-
-  setBeforeAfterSplit(value) {
-    set({ beforeAfterSplit: value });
   },
 }));

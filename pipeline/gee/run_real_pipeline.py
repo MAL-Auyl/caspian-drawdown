@@ -22,7 +22,7 @@ from pathlib import Path
 
 import ee
 import pyproj
-from shapely.geometry import LineString
+from shapely.geometry import LineString, Point, shape
 from shapely.ops import transform
 
 from pipeline.gee import config as cfg
@@ -39,6 +39,7 @@ from pipeline.transects.displacement import build_transect_record
 from pipeline.transects.generate import TransectDirectionError, cast_transects
 
 _TO_OUTPUT = pyproj.Transformer.from_crs(cfg.CRS_METRIC, cfg.CRS_OUTPUT, always_xy=True).transform
+_TO_METRIC = pyproj.Transformer.from_crs(cfg.CRS_OUTPUT, cfg.CRS_METRIC, always_xy=True).transform
 
 
 def _year_mndwi_and_threshold(year: int, aoi: ee.Geometry, corridor: ee.Geometry, work_scale: int = WORK_SCALE_FLOOR_M):
@@ -173,21 +174,38 @@ def run(years: list[int], out_dir: Path, project: str, reference_year: int, base
     (out_dir / "transects.geojson").write_text(json.dumps(transects_fc, ensure_ascii=False), encoding="utf-8")
     print(f"\ntransects.geojson: {len(transect_features)} трансект")
 
-    objects_features = _build_objects(transect_features, years)
+    objects_features = _build_objects(transect_features, years, shorelines_out_dir)
     (out_dir / "objects.geojson").write_text(
         json.dumps({"type": "FeatureCollection", "features": objects_features}, ensure_ascii=False), encoding="utf-8")
     print(f"objects.geojson: {len(objects_features)} объектов (координаты приблизительные, см. README.md)")
 
 
-def _nearest_distance(positions: dict, target_year: int, years: list[int]) -> float:
-    """abs(position) на нужный год, либо на ближайший доступный, если данных
-    за сам год нет (снимок не найден/облачно)."""
-    v = positions.get(str(target_year))
-    if v is not None:
-        return abs(v)
-    candidates = sorted((y for y in years if positions.get(str(y)) is not None),
-                         key=lambda y: abs(y - target_year))
-    return abs(positions[str(candidates[0])]) if candidates else 0.0
+def _distance_to_shoreline(lon: float, lat: float, year: int, shorelines_dir: Path, years: list[int]) -> float:
+    """Реальное расстояние от точки объекта до линии берега конкретного года,
+    в метрике (EPSG:32639) — а НЕ значение из transects[].positions.
+
+    Грабля #7: positions хранит проекцию точки пересечения на трансекту,
+    отсчитанную от НАЧАЛА трансекты (якорь на baseline, вынесенный от
+    реального берега на BASELINE_OFFSET_M) — это расстояние вдоль трансекты,
+    а не расстояние от объекта до берега. Раньше оно писалось в
+    distance_to_shore_*_m напрямую: для всех объектов получались похожие
+    ~4000м (baseline offset + путь трансекты до земли), а не настоящая
+    дистанция (у дороги в 2м от воды выходило те же 4000м)."""
+    if year not in years:
+        year = min(years, key=lambda y: abs(y - year))
+    candidates = sorted(years, key=lambda y: abs(y - year))
+    for y in candidates:
+        path = shorelines_dir / f"shoreline_{y}.geojson"
+        if not path.exists():
+            continue
+        fc = json.loads(path.read_text(encoding="utf-8"))
+        if not fc["features"]:
+            continue
+        coast = shape(fc["features"][0]["geometry"])
+        coast_metric = transform(_TO_METRIC, coast)
+        pt_metric = transform(_TO_METRIC, Point(lon, lat))
+        return coast_metric.distance(pt_metric)
+    return 0.0
 
 
 def _nearest_with_data(transect_features, lon, lat, min_valid_years=10):
@@ -207,24 +225,23 @@ def _nearest_with_data(transect_features, lon, lat, min_valid_years=10):
     return min(pool, key=dist) if pool else None
 
 
-def _build_objects(transect_features, years):
+def _build_objects(transect_features, years, shorelines_dir: Path):
     features = []
     for od in OBJECT_DEFS:
         best = _nearest_with_data(transect_features, od["lon"], od["lat"])
         if best is None:
             continue
+        # speed/nearest_transect_id по-прежнему берутся с ближайшей трансекты
+        # с данными — это регрессия скорости, отдельная задача от измерения
+        # текущего расстояния до берега.
         speed = best["properties"]["speed_m_per_year"]
-        # positions_clean, не positions: снимок на конкретную дату не должен
-        # брать значение года, который сама регрессия отбросила как выброс
-        # Хампеля (см. pipeline/transects/displacement.py).
-        positions = best["properties"]["positions_clean"]
         last_year = years[-1]
 
-        d2000 = _nearest_distance(positions, 2000, years)
-        d2010 = _nearest_distance(positions, 2010, years)
-        d2020 = _nearest_distance(positions, 2020, years)
-        d2026 = _nearest_distance(positions, 2026, years)
-        d_last = _nearest_distance(positions, last_year, years)
+        d2000 = _distance_to_shoreline(od["lon"], od["lat"], 2000, shorelines_dir, years)
+        d2010 = _distance_to_shoreline(od["lon"], od["lat"], 2010, shorelines_dir, years)
+        d2020 = _distance_to_shoreline(od["lon"], od["lat"], 2020, shorelines_dir, years)
+        d2026 = _distance_to_shoreline(od["lon"], od["lat"], 2026, shorelines_dir, years)
+        d_last = _distance_to_shoreline(od["lon"], od["lat"], last_year, shorelines_dir, years)
 
         risk = compute_risk(speed, d2026, od["category"])
         forecast = build_scenarios(d2026, speed, last_year)
