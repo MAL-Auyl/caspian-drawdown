@@ -82,14 +82,6 @@ OBJECT_DEFS = [
          description_en="Resort complex, hackathon final venue.",
          recommendation_ru="Долгосрочное планирование береговой инфраструктуры курорта.",
          recommendation_en="Long-term planning for the resort's shore infrastructure."),
-    dict(object_id=8, name_ru="Прибрежная автодорога",
-         name_kk="Жағалаудағы автожол", name_en="Coastal Highway",
-         category="transport", criticality=5, lon=51.215, lat=43.612,
-         description_ru="Участок дороги, идущий вдоль береговой линии.",
-         description_kk="Жағалау бойымен өтетін жол учаскесі.",
-         description_en="Road segment running along the shoreline.",
-         recommendation_ru="Оценить риск подмыва полотна на участках высокой скорости отступления.",
-         recommendation_en="Assess embankment-erosion risk on high-retreat segments."),
 ]
 
 
