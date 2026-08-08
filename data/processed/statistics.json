@@ -33,9 +33,9 @@
   },
   "exposed_seabed_km2": 84.6,
   "objects": {
-    "total": 8,
+    "total": 7,
     "high_risk": 2,
-    "medium_risk": 6,
+    "medium_risk": 5,
     "low_risk": 0
   },
   "validation": {
