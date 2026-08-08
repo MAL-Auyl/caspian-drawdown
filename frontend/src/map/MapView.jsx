@@ -131,6 +131,18 @@ export default function MapView() {
     objectLayerRef.current = layer;
   }, [objects, selectObject]);
 
+  // При выборе объекта (клик по маркеру или по строке в списке) карта плавно
+  // подлетает к нему — единый эффект покрывает оба источника выбора, т.к. оба
+  // пишут только в selectedObjectId.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !objects || !selectedObjectId) return;
+    const feature = objects.features.find((f) => f.properties.object_id === selectedObjectId);
+    if (!feature) return;
+    const [lon, lat] = feature.geometry.coordinates;
+    map.flyTo([lat, lon], Math.max(map.getZoom(), 14), { duration: 1.2 });
+  }, [selectedObjectId, objects]);
+
   // Heat Map риска отступления — окрашивает трансекты по нормализованной
   // retreat_rate (см. riskMap.js). Обновляется вместе с таймлайном, т.к.
   // retreat_rate считается по данным вплоть до currentYear.

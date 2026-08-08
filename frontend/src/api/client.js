@@ -33,11 +33,19 @@ export async function submitReport(payload) {
 }
 
 export async function sendChatMessage(message, history, lang) {
-  const res = await fetch(`${API_BASE}/chat`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message, history, lang }),
-  });
+  let res;
+  try {
+    // Тот же щедрый таймаут, что у fetchBootstrap — Render free-tier может
+    // ещё не проснуться от предыдущего запроса, иначе чат зависает молча.
+    res = await fetch(`${API_BASE}/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message, history, lang }),
+      signal: AbortSignal.timeout(45000),
+    });
+  } catch {
+    throw new Error("Сервер просыпается — подождите полминуты и попробуйте снова");
+  }
   const body = await res.json().catch(() => null);
   if (!res.ok) {
     const errMessage = body?.detail?.detail || body?.detail || "Не удалось получить ответ";
